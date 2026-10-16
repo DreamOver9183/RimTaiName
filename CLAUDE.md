@@ -26,14 +26,19 @@ RimWorld 1.6 Mod：在原版命名視窗（`Dialog_NamePawn`）加上鎖頭與�
 
 ```
 Source/RimTaiName/
-├── Core/        Mod 進入點、設定、ApiKeyStore、KeyRedactor、ModLog（可用遊戲型別；KeyRedactor 除外）
-├── Pipeline/    翻譯管線，純 C#
-├── Llm/         Gemini 用戶端，純 C#
+├── Core/        Mod 進入點（建立所有服務）、設定與設定頁、ApiKeyStore、KeyRedactor、ModLog、UiJob、GeminiMessages
+│                （可用遊戲型別；KeyRedactor、UiJob 除外）
+├── Pipeline/    翻譯管線，純 C#：NameKey、SpecialFormRule、NameSanitizer、BuiltInDictionary、PersonalNameCache、
+│                NickAliasResolver、NameProcessorService、NameRequest（資料契約）
+├── Llm/         Gemini，純 C#：GeminiInteractionsClient（傳輸）、GeminiNameTranslator（ILlmClient）、PromptBuilder、
+│                RequestGate、MiniJson、ModelId、QuotaResetClock
 └── UI_Patches/  Harmony patch 與視窗狀態（遊戲型別）
-Source/RimTaiName.Tests/   xUnit，net10.0，以連結方式編譯 Pipeline/**、Llm/**、Core/KeyRedactor.cs
+Prompts/NameRules_zhTW.txt  翻譯規則（C# 與 Python 共用）
+Source/RimTaiName.Tests/   xUnit，net10.0，以連結方式編譯 Pipeline/**、Llm/**、Core/KeyRedactor.cs、Core/UiJob.cs
 ```
 
-*   **純 C# 層（`Pipeline/`、`Llm/`、`Core/KeyRedactor.cs`）：**
+*   **服務的建立：** 全部在 `RimTaiNameMod` 建構子建立並以靜態屬性公開（`Settings`、`Cache`、`Dictionary`、`Processor`、`Prompts`、`Gemini`、`Translator`、`Gate`）。資料檔路徑一律取自 `content.RootDir`（Mod 資料夾）或 `GenFilePaths.ConfigFolderPath`（使用者資料）。
+*   **純 C# 層（`Pipeline/`、`Llm/`、`Core/KeyRedactor.cs`、`Core/UiJob.cs`）：**
     *   不引用 `Verse`、`RimWorld`、`UnityEngine`、`HarmonyLib`，也不自己寫記錄；錯誤以回傳值交給呼叫端。
     *   必須同時能在 net472（遊戲 Mono）與 net10.0（測試）編譯。禁用：`record`、`init`、`Span`、`System.Text.Json`、`HashCode`、`string.Contains(char)`、`ServicePointManager`（net10 過時）。
     *   檔案路徑由呼叫端傳入，不自己找 `GenFilePaths`。
@@ -108,7 +113,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **讀檔失敗要分兩種：** 內容損壞（`XmlException`）→ 改名為 `.corrupt` 後從空狀態開始；暫時讀不到（`IOException`、`UnauthorizedAccessException`，例如防毒鎖定）→ 保留原檔並標記，存檔前先重讀合併，仍讀不到就拒絕覆寫。否則玩家累積的資料會被新存檔蓋掉。
 *   **自訂 XML 檔：** 一律 `XmlReader.Create(path, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null })` 再 `XDocument.Load(reader)`。存在屬性裡的文字不得含 Tab／CR／LF（屬性正規化會把它們變成空白，讀回後鍵值對不上）。
 *   **可測試的 HTTP 用戶端：** 正式建構子建立 `HttpClientHandler { AllowAutoRedirect = false }`；`internal` 建構子注入 `HttpMessageHandler`、逾時與重試延遲，測試用假 handler（延遲要尊重 `CancellationToken`，否則 HttpClient 逾時測不到）。
-*   **UI 觸發的背景請求：** 主執行緒建立 `CancellationTokenSource` 並遞增世代編號，再 `Task.Run`；背景只在世代仍相符時寫入 volatile 結果欄位。金鑰變更、關閉頁面時呼叫 reset（遞增世代、取消、清除結果）。結果的記錄與 `Translate()` 都在主執行緒第一次繪製結果時進行（`Verse.Log` 是遊戲 API）。
+*   **UI 觸發的背景請求：** 一律用 `Core/UiJob<T>`：主執行緒 `Start(work, lease, onError)`，背景執行，`Reset()` 取消並丟棄晚到的結果（世代檢查與寫入結果在同一個 lock 內，否則 Reset 會被舊結果蓋回）。`onError` 本身失敗也要讓工作結束，否則 `Running` 永遠為 true、按鈕永久停用。記錄、存檔與 `Translate()` 都在主執行緒以 `TakeNewResult()` 判斷「新結果」後各做一次（`Verse.Log` 是遊戲 API）。
 *   **Gemini 請求限制：** 所有請求（翻譯、測試連線）都先 `RimTaiNameMod.TryEnterGate` 取得 lease，結束時 Dispose。間隔一律用「已經過時間」（`now - lastStart`）計算，不要用 `lastStart + interval`：可避免溢位，系統時鐘倒退時也不會鎖死。
 *   **受限的文字輸入：** 用 `Widgets.TextField(rect, text, maxLength, regex)`，超長或不符的輸入直接被拒絕，不要事後 `Substring` 截斷（可能切斷代理對）。
 *   **給玩家或記錄的錯誤細節：** 先遮蔽金鑰、再截斷（Gemini 為 200 字）；截斷點落在高代理字元時往前退一格，不切斷代理對。錯誤 JSON 沒有 `message` 時改用原始回應內容。
