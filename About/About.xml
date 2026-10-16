@@ -28,7 +28,7 @@
 • 「還原」：未鎖定的欄位恢復為開窗時的內容。
 你修改過的譯名會被記住，之後同名的小人會優先使用。
 
-API Key 在「選項 → Mod 設定 → 邊緣臺名」設定；Windows 上以 DPAPI 加密保存，不會寫進存檔或 Mod 設定檔。只有在你按下按鈕時才會把姓名送往 Google Gemini。不新增任何存檔資料，可以隨時加入或移除。
+API Key 在「選項 → Mod 設定 → 邊緣臺名 RimTaiName」設定；Windows 上以 DPAPI 加密保存，不會寫進存檔或 Mod 設定檔。只有在你按下按鈕時才會把姓名送往 Google Gemini。不新增任何存檔資料，可以隨時加入或移除。
 
 Translates pawn names into Traditional Chinese (Taiwan). Vanilla names are translated offline from a built-in dictionary with no API key; names from other mods, typed names and the "Generate name" button use the Google Gemini API with your own free API key. Lock icons keep fields unchanged; your corrections are remembered. Adds nothing to save files.</description>
 </ModMetaData>

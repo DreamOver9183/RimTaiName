@@ -95,7 +95,8 @@ namespace RimTaiName
         }
 
         /// <summary>The name from About.xml, so the settings list matches the mod list and the Workshop page.</summary>
-        public override string SettingsCategory() => Content?.Name ?? "RimTaiName";
+        public override string SettingsCategory() =>
+            string.IsNullOrWhiteSpace(Content?.Name) ? "RimTaiName" : Content.Name.Trim(); // an empty category hides the mod from the list
 
         public override void DoSettingsWindowContents(Rect inRect) => SettingsPage.Draw(inRect);
 

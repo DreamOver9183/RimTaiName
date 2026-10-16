@@ -23,7 +23,7 @@
 [*]用 Google 帳號登入 [url=https://aistudio.google.com/]Google AI Studio[/url]。
 [*]進入「API Keys」頁面，按「Create API key」。建議建在[b]沒有啟用帳單[/b]的專案上。
 [*]複製金鑰。2026 年 5 月起新發的金鑰以 [b]AQ.[/b] 開頭，預設只能呼叫 Gemini API。
-[*]回到遊戲：選項 → Mod 設定 → 邊緣臺名，貼上金鑰後按「儲存」（或直接按「從剪貼簿貼上」），再按「測試連線」確認。
+[*]回到遊戲：選項 → Mod 設定 → 邊緣臺名 RimTaiName，貼上金鑰後按「儲存」（或直接按「從剪貼簿貼上」），再按「測試連線」確認。
 [/olist]
 
 [h2]金鑰安全[/h2]
