@@ -8,9 +8,12 @@ namespace RimTaiName.Core
     /// </summary>
     public static class KeyRedactor
     {
-        /// <summary>Legacy "AIza" keys and the "AQ." auth keys AI Studio has issued since 2026-05.</summary>
+        /// <summary>
+        /// Legacy "AIza" keys and the "AQ." auth keys AI Studio has issued since 2026-05. An "AQ." match may not end
+        /// with "." so a full stop after a key in a message is not swallowed.
+        /// </summary>
         private static readonly Regex KeyPattern =
-            new Regex(@"AIza[0-9A-Za-z_\-]{35}|AQ\.[0-9A-Za-z_.\-]{20,}", RegexOptions.CultureInvariant);
+            new Regex(@"AIza[0-9A-Za-z_\-]{35}|AQ\.[0-9A-Za-z_.\-]{19,}[0-9A-Za-z_\-]", RegexOptions.CultureInvariant);
 
         /// <summary>Shorter "known keys" are not real keys; replacing them would only mangle ordinary text.</summary>
         private const int MinKnownKeyLength = 8;

@@ -33,6 +33,13 @@ namespace RimTaiName.Tests.Core
         }
 
         [Fact]
+        public void KeepsFullStopAfterAqKey()
+        {
+            string result = KeyRedactor.Redact("Authentication failed for " + AqKey + ".");
+            Assert.Equal("Authentication failed for AQ.…789w.", result);
+        }
+
+        [Fact]
         public void MasksKnownKeyEvenWithoutAKnownShape()
         {
             const string odd = "custom-secret-value-0001";

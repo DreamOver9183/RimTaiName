@@ -19,6 +19,7 @@ namespace RimTaiName.Core
         Ok,
         Empty,
         InvalidCharacters,
+        TooShort,
         TooLong,
         WriteFailed,
     }
@@ -30,6 +31,9 @@ namespace RimTaiName.Core
     public static class ApiKeyStore
     {
         private const string FileName = "RimTaiName_ApiKey.dat";
+
+        /// <summary>Real keys are 39 ("AIza…") or 53 ("AQ.…") characters; anything this short is a typo.</summary>
+        private const int MinKeyLength = 20;
 
         private const int MaxKeyLength = 256;
 
@@ -56,21 +60,29 @@ namespace RimTaiName.Core
         {
             lock (Gate)
             {
-                filePath = Path.Combine(configFolder, FileName);
-                Mode = Environment.OSVersion.Platform == PlatformID.Win32NT ? KeyStorageMode.Dpapi : KeyStorageMode.SessionOnly;
                 LastError = null;
                 key = null;
+                if (string.IsNullOrEmpty(configFolder))
+                {
+                    filePath = null;
+                    Mode = KeyStorageMode.SessionOnly;
+                    LastError = "config folder unavailable";
+                    return;
+                }
+                filePath = Path.Combine(configFolder, FileName);
+                Mode = Environment.OSVersion.Platform == PlatformID.Win32NT ? KeyStorageMode.Dpapi : KeyStorageMode.SessionOnly;
                 if (Mode == KeyStorageMode.Dpapi && File.Exists(filePath))
                 {
                     try
                     {
                         byte[] plain = ProtectedData.Unprotect(File.ReadAllBytes(filePath), Entropy, DataProtectionScope.CurrentUser);
-                        key = Encoding.UTF8.GetString(plain);
+                        string loaded = Encoding.UTF8.GetString(plain);
+                        key = Validate(loaded) == KeySaveResult.Ok ? loaded : null;
                     }
                     catch (Exception e)
                     {
                         // e.g. CryptographicException when the file was copied from another PC or user account.
-                        LastError = Describe(e);
+                        LastError = Describe(e, null);
                     }
                 }
             }
@@ -79,15 +91,9 @@ namespace RimTaiName.Core
         public static KeySaveResult Save(string input)
         {
             string candidate = input?.Trim();
-            if (string.IsNullOrEmpty(candidate))
-                return KeySaveResult.Empty;
-            if (candidate.Length > MaxKeyLength)
-                return KeySaveResult.TooLong;
-            foreach (char c in candidate)
-            {
-                if (char.IsWhiteSpace(c) || char.IsControl(c))
-                    return KeySaveResult.InvalidCharacters;
-            }
+            KeySaveResult validation = Validate(candidate);
+            if (validation != KeySaveResult.Ok)
+                return validation;
             lock (Gate)
             {
                 if (Mode == KeyStorageMode.Dpapi && filePath != null)
@@ -97,21 +103,16 @@ namespace RimTaiName.Core
                         byte[] cipher = ProtectedData.Protect(Encoding.UTF8.GetBytes(candidate), Entropy, DataProtectionScope.CurrentUser);
                         WriteAtomically(filePath, cipher);
                     }
-                    catch (IOException e)
+                    catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                     {
-                        LastError = Describe(e);
-                        return KeySaveResult.WriteFailed;
-                    }
-                    catch (UnauthorizedAccessException e)
-                    {
-                        LastError = Describe(e);
+                        LastError = Describe(e, candidate);
                         return KeySaveResult.WriteFailed;
                     }
                     catch (Exception e)
                     {
                         // DPAPI itself is unusable in this runtime: keep the key for this session only.
                         Mode = KeyStorageMode.SessionOnly;
-                        LastError = Describe(e);
+                        LastError = Describe(e, candidate);
                         key = candidate;
                         return KeySaveResult.Ok;
                     }
@@ -128,14 +129,16 @@ namespace RimTaiName.Core
             {
                 key = null;
                 LastError = null;
+                if (filePath == null)
+                    return;
                 try
                 {
-                    if (filePath != null && File.Exists(filePath))
-                        File.Delete(filePath);
+                    DeleteIfExists(filePath);
+                    DeleteIfExists(filePath + ".tmp");
                 }
-                catch (Exception e)
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
-                    LastError = Describe(e);
+                    LastError = Describe(e, null);
                 }
             }
         }
@@ -146,15 +149,49 @@ namespace RimTaiName.Core
         /// <summary>The plain key, or null. Only the Gemini client (via an injected delegate) may call this.</summary>
         internal static string Read() => key;
 
+        /// <summary>
+        /// Printable ASCII only (keys go into an HTTP header), 20–256 characters. No prefix check: Google has
+        /// changed the key format before.
+        /// </summary>
+        private static KeySaveResult Validate(string candidate)
+        {
+            if (string.IsNullOrEmpty(candidate))
+                return KeySaveResult.Empty;
+            foreach (char c in candidate)
+            {
+                if (c < '!' || c > '~')
+                    return KeySaveResult.InvalidCharacters;
+            }
+            if (candidate.Length < MinKeyLength)
+                return KeySaveResult.TooShort;
+            return candidate.Length > MaxKeyLength ? KeySaveResult.TooLong : KeySaveResult.Ok;
+        }
+
+        /// <summary>Writes a temp file, then swaps it in with File.Replace so the old key survives a failed write.</summary>
         private static void WriteAtomically(string path, byte[] data)
         {
             string temp = path + ".tmp";
-            File.WriteAllBytes(temp, data);
-            if (File.Exists(path))
-                File.Delete(path);
-            File.Move(temp, path);
+            try
+            {
+                File.WriteAllBytes(temp, data);
+                if (File.Exists(path))
+                    File.Replace(temp, path, null);
+                else
+                    File.Move(temp, path);
+            }
+            finally
+            {
+                DeleteIfExists(temp);
+            }
         }
 
-        private static string Describe(Exception e) => e.GetType().Name + ": " + Redact(e.Message);
+        private static void DeleteIfExists(string path)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+
+        private static string Describe(Exception e, string candidate) =>
+            e.GetType().Name + ": " + KeyRedactor.Redact(KeyRedactor.Redact(e.Message, candidate), key);
     }
 }
