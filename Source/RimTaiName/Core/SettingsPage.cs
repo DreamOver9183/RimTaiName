@@ -79,6 +79,7 @@ namespace RimTaiName.Core
             {
                 // Always unwind the GUI groups, or IMGUI clipping breaks for the whole window.
                 Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.UpperLeft;
                 GUI.color = Color.white;
                 list.End();
                 Widgets.EndScrollView();
@@ -87,6 +88,9 @@ namespace RimTaiName.Core
 
         private static void DrawSection(string name, int logKey, Action draw)
         {
+            Color color = GUI.color;
+            GameFont font = Text.Font;
+            TextAnchor anchor = Text.Anchor;
             try
             {
                 draw();
@@ -94,6 +98,13 @@ namespace RimTaiName.Core
             catch (Exception e)
             {
                 ModLog.ErrorOnce($"settings section '{name}' failed: {e}", logKey);
+            }
+            finally
+            {
+                // A section that throws mid-way must not leak its colour, font or alignment into the next one.
+                GUI.color = color;
+                Text.Font = font;
+                Text.Anchor = anchor;
             }
         }
 
