@@ -44,7 +44,7 @@
 | 研究與規格校正 | 完成 | v1 → v2 共 16 項修正（附錄 A） |
 | 原版人名抽取 | 完成 | `Tools/extract_vanilla_names.py` → `NameTable/`：共 24,596 個名字詞，分四層 |
 | 內建字典 v0.1 | 完成（部分校對） | `Dictionary/BaseNames_zhTW.tsv`。第 1 層逐筆校對；官方譯名逐筆對照；第 2、4 層待校對 |
-| Step 0 技術驗證 | 完成，新生兒視窗待測 | Harmony patch、遊戲內 HTTPS、工具列與鎖頭、焦點寫入皆通過；在測試機 386 個 Mod 環境下正常。新生兒視窗改在開發者模式下測試（4.2） |
+| Step 0 技術驗證 | 完成，新生兒視窗待測 | Harmony patch、遊戲內 HTTPS、工具列與鎖頭、焦點寫入皆通過；在測試機 386 個 Mod 環境下正常。新生兒視窗改在開發模式＋上帝模式下測試（4.2） |
 | 開發環境 | 完成 | .NET 10 SDK 10.0.402；直接引用遊戲 DLL 編譯；`RimWorld\Mods\RimTaiName` 以 junction 連到專案；本機 git（branch `main`） |
 | 實作計畫 | 完成並重審 | `RimTaiName 實作計畫.markdown`：Step 0～7 的工作清單與進度勾選。10-16 重審遊戲 API 與 Gemini API，修正已回寫本文件（附錄 A） |
 | Step 1 | 程式完成，待遊戲內驗證 | PR #1～#5 已合併：金鑰儲存與遮蔽、Gemini 傳輸層（即時 API 測試通過）、個人快取、打包腳本、設定頁；單元測試 140 項；GitHub：DreamOver9183/RimTaiName |
@@ -102,7 +102,7 @@
 *   **建構子：** `(Pawn pawn, NameFilter visibleNames, NameFilter editableNames, Dictionary<NameFilter, List<string>> suggestedNames, string initialFirstNameOverride, …NickName…, …LastName…, …Title…)`
 *   **權限**（`PawnNamingUtility.NamePawnDialog`）：
     *   成年小人：名、暱稱、姓、頭銜四列可見，只有暱稱與頭銜可編輯。
-    *   新生兒命名期限內**或開發者模式**：名、暱稱、姓三列皆可編輯，頭銜隱藏；姓欄顯示「建議...」（父母的姓），沒有隨機鈕。開發者模式下任何小人都會開出這個版本，可用來測試新生兒視窗。
+    *   新生兒命名期限內，**或開發模式且開啟上帝模式**（`DebugSettings.ShowDevGizmos`）：名、暱稱、姓三列皆可編輯，頭銜隱藏；姓欄顯示「建議...」（父母的姓），沒有隨機鈕。開發模式＋上帝模式下任何小人都會開出這個版本（只開開發模式不會），可用來測試新生兒視窗。
     *   父母都沒有姓時，「建議」清單是空的，姓欄**不畫任何按鈕**。
 *   **確定流程：** 沒有覆寫 `OnAcceptKeyPressed`。按 Enter 或確定時，`DoWindowContents` 內依序執行 `BuildName()`（每次都 `new NameTriple`）→ `IsValid` → `pawn.Name = name` → `WindowStack.TryRemove(this)`。因此可用 `ReferenceEquals(pawn.Name, 開窗時的 Name)` 偵測「確定」。不要 patch `Pawn.Name` 的 setter（可能被 inline，且開局畫面每次按鍵都會重設名字）。
 *   **點視窗外：** `closeOnClickedOutside = true`，點外面會直接取消。
@@ -391,10 +391,10 @@ TestLog/    ✓ 測試機傳回的 Player.log
 ### Step 0 收尾
 *   **新生兒命名視窗：** 確認鎖頭與工具列的位置，以及姓欄的「建議...」不受影響。
 *   **程式修改：** 鎖頭改用 `NewCol(24f, HorizontalJustification.Right)` 靠右對齊。
-*   **驗證：** 開發者模式下開啟改名視窗即為新生兒版（4.2），不必等嬰兒出生。測三種情況：
+*   **驗證：** 開發模式＋上帝模式下開啟改名視窗即為新生兒版（4.2），不必等嬰兒出生。測三種情況：
     *   有具名父母的小人：姓欄有「建議...」。
     *   沒有具名父母的小人：姓欄沒有按鈕。
-    *   關閉開發者模式的成年殖民者。
+    *   關閉上帝模式後的成年殖民者。
 
     與 Step 1 一起送測試機，並回傳 `Player.log`。
 
@@ -451,7 +451,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
     *   移除測試按鈕，改成「翻譯姓名」與「還原」。
     *   加入非同步請求、`RequestId`、暫停點外關閉、偵測「確定」並學習。
 *   **驗證（手動測試）：**
-    *   成年殖民者、新生兒、開發者模式。
+    *   成年殖民者、新生兒、開發模式＋上帝模式。
     *   動物與機械體的視窗沒有模組 UI。
     *   等待中按 ESC、點視窗外、按 Enter。
     *   全鎖定、部分鎖定、還原。
@@ -498,7 +498,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
 
 **實作計畫重審（2026-10-16）：** 以本機 1.6.4871 的反射與 IL、以及 Gemini 官方文件（10-16 版）重新查證後修正：
 *   **遊戲：**
-    *   開發者模式會開出新生兒版視窗，Step 0 收尾改用它測試。
+    *   開發模式＋上帝模式會開出新生兒版視窗，Step 0 收尾改用它測試。
     *   姓欄「建議」清單為空時不畫按鈕，鎖頭改為靠右對齊。
     *   `BuildName` 每次建立新物件，以 `ReferenceEquals` 偵測「確定」。
     *   `ValidNameRegex` 會擋 `·` 與 CJK 擴充 B 以後的字。

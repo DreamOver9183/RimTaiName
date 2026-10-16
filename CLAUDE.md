@@ -117,7 +117,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 ### RimWorld
 *   對 `Assembly-CSharp.dll` 做反射時，會碰到 Unity 的靜態建構子會丟例外；`ReflectionOnlyLoadFrom` 需要先載入相依組件。只看中繼資料即可。
 *   `BuildName()` 每次都 `new NameTriple`，所以用 `ReferenceEquals(pawn.Name, 開窗時的 Name)` 偵測「確定」。不要 patch `Pawn.Name` setter（可能被 inline；開局畫面每次按鍵都會重設名字）。
-*   開發者模式下，任何小人的改名視窗都是新生兒版（三列可編輯、無頭銜、姓欄為「建議...」）。
+*   開發模式**且**開啟上帝模式時（`DebugSettings.ShowDevGizmos` = `Prefs.DevMode && godMode`），任何小人的改名視窗都是新生兒版（三列可編輯、無頭銜、姓欄為「建議...」）；只開開發模式不會。
 *   姓欄「建議」清單為空時，`MakeRow` 不畫任何按鈕；鎖頭必須 `NewCol(24f, HorizontalJustification.Right)`。
 *   `CharacterCardUtility.ValidNameRegex` 擋 `·`、`・` 與 CJK 擴充 B 以後的字（代理對、長度算 2）。
 *   Mod 設定檔名是 `Mod_<資料夾名>_<Mod 類別>.xml`：junction 開發版與 Workshop 版的設定不互通。

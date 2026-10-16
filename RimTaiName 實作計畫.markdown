@@ -10,7 +10,7 @@
 - [x] 準備工作：git、`.gitignore`、第一個 commit（2026-10-16）
 - [x] 實作計畫全面重審，修正回寫 v3（2026-10-16）
 - [x] 建立 CLAUDE.md 知識庫、GitHub 遠端與 PR 審查流程（2026-10-16）
-- [ ] Step 0 收尾：新生兒命名視窗（開發者模式）
+- [ ] Step 0 收尾：新生兒命名視窗（開發模式＋上帝模式）
   - [x] 鎖頭靠右對齊（PR #1）
   - [ ] 遊戲內實測三種視窗
 - [ ] Step 1：基礎建設、設定頁、API Key 與 Gemini 傳輸層
@@ -54,7 +54,7 @@ v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定
 | `Dialog_NamePawn` 的建構子、`pawn`／`names`／`size`、`NameContext`（`current`、`editable`、`nameIndex`、`maximumNameLength`、`MakeRow`） | 全部存在 | `NamePawnAccess` 需新增 `pawn` 的存取委派 |
 | 「確定」流程 | 沒有覆寫 `OnAcceptKeyPressed`。按 Enter 或確定時，`DoWindowContents` 內依序執行 `BuildName()`（**每次都 `new NameTriple`**）→ `IsValid` → `pawn.Name = name` → `WindowStack.TryRemove(this)` | 在 `DoWindowContents` Postfix 用 `ReferenceEquals(pawn.Name, OriginalName)` 偵測。不要 patch `Pawn.Name` 的 setter：它可能被 inline，而且開局畫面每次按鍵都會重設名字 |
 | 視窗旗標 | 建構子設定 `forcePause`、`absorbInputAroundWindow`、`closeOnClickedOutside = true`、`closeOnAccept = false`，五個旗標都是公開可寫的欄位 | 請求在途時把 `closeOnClickedOutside` 暫設為 `false`。等待中按 Enter 會以目前內容直接確定；晚到的結果只寫入快取 |
-| 新生兒視窗 | `PawnNamingUtility.NamePawnDialog` 在「命名期限內**或開發者模式**」時走新生兒分支：三列可編輯、隱藏頭銜、姓欄的隨機鈕換成「建議...」（父母的姓） | 開發者模式下，任何小人都會開出新生兒版視窗，可以直接測試 |
+| 新生兒視窗 | `PawnNamingUtility.NamePawnDialog` 在「命名期限內，**或開發模式且開啟上帝模式**（`DebugSettings.ShowDevGizmos`）」時走新生兒分支：三列可編輯、隱藏頭銜、姓欄的隨機鈕換成「建議...」（父母的姓） | 開發模式＋上帝模式下，任何小人都會開出新生兒版視窗，可以直接測試；只開開發模式不會 |
 | 姓欄「建議」清單是空的 | 父母都沒有姓時，`MakeRow` 在姓欄**不畫任何按鈕** | 鎖頭要用 `NewCol(24f, HorizontalJustification.Right)` 靠右對齊，否則會錯位 |
 | `ValidNameRegex` | 位在 `CharacterCardUtility`（公開、可寫）：`^[\p{L}0-9 '\-.]*$`；只在打字時檢查；長度以 UTF-16 計算 | 會擋 `·`、`・` 與 CJK 擴充 B 以後的字。`NameSanitizer` 只允許 U+3400–4DBF、U+4E00–9FFF 與原文中的大寫字母 |
 | `System.Security.dll` | Windows 版用 crypt32 DPAPI。Linux 與 macOS 的 Mono 會**靜默改用 ManagedProtection**，不會丟例外 | 金鑰儲存方式依平台判斷，不靠加解密探測。解密失敗會丟 `CryptographicException` |
@@ -133,7 +133,7 @@ v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定
     | 逾時、斷線 | 稍後再試 |
 11. **鎖頭靠右對齊：** 改用 `divider.NewCol(24f, HorizontalJustification.Right)`。新生兒的姓欄沒有「建議」選項時不會畫按鈕，原本的左側切法會錯位。
 12. **本機命中也要清理：** 字典與快取是用小寫鍵查詢的，例如「Ad」會查到「AD」，但原文只有大寫 A。每次本機命中都要以實際原文跑 `NameSanitizer`，不通過就當作沒命中，往下一層查。
-13. **Step 0 收尾改用開發者模式：** 不必等嬰兒出生。
+13. **Step 0 收尾改用開發模式＋上帝模式：** 不必等嬰兒出生。
 
 ---
 
@@ -171,10 +171,10 @@ v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定
 ## Step 0 收尾：新生兒命名視窗
 
 *   **程式修改：** `Patch_NameContext_MakeRow` 改用 `divider.NewCol(24f, HorizontalJustification.Right)`（補充修正 11）。
-*   **測試方式：** 開發機或測試機都可以。開啟開發者模式後，從角色資訊卡的改名鈕開啟視窗，測以下三種情況：
+*   **測試方式：** 開發機或測試機都可以。開啟開發模式與上帝模式後，從角色資訊卡的改名鈕開啟視窗，測以下三種情況：
     1.  有具名父母的小人：姓欄有「建議...」選單，而且仍可使用。
     2.  沒有具名父母的小人：姓欄沒有任何按鈕，鎖頭仍對齊在同一欄。
-    3.  關閉開發者模式後的成年殖民者：四列，只有暱稱與頭銜原本就可編輯。
+    3.  關閉上帝模式後的成年殖民者：四列；原版只有暱稱與頭銜可編輯，本模組另外解鎖名與姓。
 *   **確認項目：**
     *   鎖頭欄與三列對齊。
     *   工具列位在文字框與「取消／確定」之間。
@@ -340,7 +340,7 @@ v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定
 6.  **工具列：** 驗證版的三個按鈕換成「翻譯姓名」與「還原」兩個；「生成中文名」到 Step 6 再加。
 
 **驗證（手動，本機與測試機）：**
-*   成年殖民者、開發者模式（新生兒版）的視窗，以及姓欄有／沒有「建議」的情況。
+*   成年殖民者、開發模式＋上帝模式（新生兒版）的視窗，以及姓欄有／沒有「建議」的情況。
 *   動物與機械體的視窗沒有任何模組 UI。
 *   等待中按 ESC；點視窗外，不應關閉；按 Enter，應以目前內容確定，晚到的結果只進快取。
 *   全鎖定、部分鎖定、還原；等待中手動改某一欄，該欄不應被覆寫。
