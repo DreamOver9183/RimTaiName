@@ -69,6 +69,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | Python 語法檢查 | `python -I -m py_compile Tools/<file>.py`（沒有安裝 ruff／pyflakes） |
 | PowerShell 語法檢查 | `[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)`（沒有 PSScriptAnalyzer） |
 | 打包 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（含建置與金鑰掃描；`-NoBuild` 略過建置） |
+| 金鑰稽核（測試機） | 把 `Tools/audit_key_leak.ps1` 複製到測試機，在 **PowerShell**（不是 cmd）執行 `powershell -NoProfile -ExecutionPolicy Bypass -File audit_key_leak.ps1`；結束碼 0 乾淨、1 找到金鑰、2 找不到資料夾、3 有檔案讀不到。自我測試：`Tools/test_audit_key_leak.ps1`（13 個情境） |
 | 打包腳本自我測試 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/test_package_mod.ps1`（改動打包腳本時執行，11 個情境） |
 | 重新產生字典 | `python -I Tools/merge_dictionary.py` |
 | 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
@@ -149,6 +150,9 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   `Get-ChildItem` 預設略過隱藏檔；做安全掃描時一定要加 `-Force`。
 *   `Join-Path` 不會處理已是絕對路徑的子路徑；把參數轉成絕對路徑要用 `[System.IO.Path]::GetFullPath([System.IO.Path]::Combine((Get-Location).ProviderPath, $p))`。
 *   腳本檔維持 ASCII（註解用英文），避免 PowerShell 5.1 把無 BOM 的 UTF-8 當成 ANSI 讀取。
+*   PowerShell 5.1 呼叫外部程式時會**丟掉空字串參數**（`-X ''` 變成缺少參數值），測試「空值」要用空白字串。
+*   掃描可能很大的檔案（`Player.log` 可達數百 MB）要分塊串流讀取，區塊間保留重疊以免漏掉跨邊界的樣式，並只解碼實際讀到的位元組；開檔用 `FileShare.ReadWrite | Delete`，不妨礙遊戲寫入與輪替 log。
+*   給使用者手動執行的單行指令容易在 cmd 執行或碰到資料夾而報錯；需要可靠結果時改成附自我測試的腳本。
 
 ### C#／Mono 相容
 *   字串解析器在呼叫 `string.CompareOrdinal(a, i, b, j, len)` 前先檢查剩餘長度：.NET 10 會自動截短比較，Mono 可能直接丟 `ArgumentOutOfRangeException`，測試抓不到差異。
