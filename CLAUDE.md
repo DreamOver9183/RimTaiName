@@ -143,7 +143,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   本帳號 Copilot 審查額度已用完：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
 *   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
 *   推送修正後立刻 `gh pr merge` 可能回報「Base branch was modified」；這是 GitHub 還在重算合併狀態，稍候重試即可，合併前確認 squash 內容含最新 commit。
-*   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach <tmp> <branch>`），避免工作區中下一個單元的未追蹤檔案混入。
+*   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach "D:\Claude Code\rtn_verify_<名稱>" <branch>`），避免工作區中下一個單元的未追蹤檔案混入，用完 `git worktree remove --force`。**不要放在 `%TEMP%`**：Windows 應用程式控制原則（Smart App Control）會擋下暫存資料夾中新建的測試 DLL（`FileLoadException 0x800711C7`），結果顯示「總計 0」，看起來像通過。
 *   多個 PR 平行審查時，切換分支會讓「已提交在別的分支」的檔案從工作區消失；回頭修前一個 PR 前，先 `git stash push --include-untracked -- <後續單元的路徑>`，修完、合併後再 `git stash pop`。
 *   本 session 的工具不允許 `Remove-Item Env:<名稱>`（會被誤判成刪除路徑）；清除環境變數用 `$env:<名稱> = $null`。
 
@@ -156,6 +156,12 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   PowerShell 5.1 呼叫外部程式時會**丟掉空字串參數**（`-X ''` 變成缺少參數值），測試「空值」要用空白字串。
 *   掃描可能很大的檔案（`Player.log` 可達數百 MB）要分塊串流讀取，區塊間保留重疊以免漏掉跨邊界的樣式，並只解碼實際讀到的位元組；開檔用 `FileShare.ReadWrite | Delete`，不妨礙遊戲寫入與輪替 log。
 *   給使用者手動執行的單行指令容易在 cmd 執行或碰到資料夾而報錯；需要可靠結果時改成附自我測試的腳本。
+
+### 翻譯管線
+*   順序（v3 §6.1）：鎖定／空白／已含中文 → 特殊字形 → 暱稱別名 → 個人快取 → 字典 → Pending（Gemini）。每個本機命中都以實際原文經 `NameSanitizer.Sanitize`，不通過就往下一層。
+*   暱稱別名：暱稱等於**目前**的名／姓，或等於**開窗時**的名／姓且該欄**已經是中文**，才算別名。玩家把名字重骰成另一個英文名時，舊暱稱就成了獨立外號，不能被新名字的譯名覆寫。名字比對一律用 `NameKey.Normalize`。
+*   別名暱稱不送 Gemini，等對應欄位的結果出來再填；對應欄位沒有中文就保持不動。送出的 `LlmRequest.NickSource` 依本次解析結果決定，不沿用開窗時的值。
+*   `ResolveRemoteAsync` 只信任 Wanted 欄位的回傳值；鎖定或已解析的欄位即使模型回了值也忽略。用戶端例外 → 失敗；非呼叫端要求的 `OperationCanceledException` → Timeout；呼叫端取消 → 往外丟。
 
 ### 名字規則（C# 與 Python 雙實作）
 *   規則同時存在於 `Tools/name_rules.py`（字典產生）與 `Pipeline/`（遊戲內），任何一邊改了都要同步另一邊並重跑 fixture。中文字元範圍兩邊都是 U+3400–U+4DBF、U+4E00–U+9FFF（不含中間的易經卦符）。

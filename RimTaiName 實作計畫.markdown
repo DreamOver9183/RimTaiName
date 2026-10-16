@@ -23,7 +23,13 @@
   - [x] 金鑰稽核腳本 `audit_key_leak.ps1`（PR #7）
   - [x] 遊戲內實測（`TestLog/3`）：DPAPI 儲存與重開後保留、顯示／隱藏、測試連線（HTTP 200）、不存在的模型（HTTP 404）、稽核無金鑰
   - 未測：開發機上的 DPAPI（開發機沒有執行過遊戲）；遊戲內輸入錯誤金鑰（已由即時單元測試涵蓋）
-- [ ] Step 2：翻譯管線（純 C#）＋ 單元測試
+- [x] Step 2：翻譯管線（純 C#）＋ 單元測試（2026-10-16）
+  - [x] 名字規則 `NameKey`／`SpecialFormRule`／`NameSanitizer`，以及 Python 一致性 fixture（24,623 列）（PR #8）
+  - [x] 內建字典 `BuiltInDictionary`（PR #9）
+  - [x] 資料契約、`NickAliasResolver`、`NameProcessorService`、`ILlmClient` 介面（PR #10）
+  - 單元測試共 252 項通過（另 4 項即時測試在未設定金鑰時略過）
+  - 與原計畫的差異：`ProcessMode.Generate` 暫時丟 `NotSupportedException`（Step 6 實作）；別名只在對應欄位已是中文時才比對開窗時的英文
+  - Mono 執行期的 Unicode 正規化仍待 Step 4 在遊戲內驗證（André、ＭＪ）
 - [ ] Step 3：Gemini 翻譯請求
 - [ ] Step 4：命名視窗正式版（MVP 完成）
 - [ ] Step 5：字典 v1.0
@@ -32,7 +38,7 @@
 
 ## Context
 
-v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定案設計與路線圖。Step 0 與 Step 1 已完成並通過遊戲內實測（2026-10-16）；下一步是 Step 2。
+v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定案設計與路線圖。Step 0 與 Step 1 已完成並通過遊戲內實測，Step 2 已完成（皆為 2026-10-16）；下一步是 Step 3。
 
 本文件把 v3 第 11 節的路線圖展開成可以直接執行的工作清單，每一步都列出：
 *   要建立或修改哪些檔案。

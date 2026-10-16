@@ -48,7 +48,8 @@
 | 開發環境 | 完成 | .NET 10 SDK 10.0.402；直接引用遊戲 DLL 編譯；`RimWorld\Mods\RimTaiName` 以 junction 連到專案；本機 git（branch `main`） |
 | 實作計畫 | 完成並重審 | `RimTaiName 實作計畫.markdown`：Step 0～7 的工作清單與進度勾選。10-16 重審遊戲 API 與 Gemini API，修正已回寫本文件（附錄 A） |
 | Step 1 | 完成 | PR #1～#7 已合併：金鑰儲存與遮蔽、Gemini 傳輸層（即時 API 測試通過）、個人快取、打包腳本、設定頁（修正 Listing 自動開新欄造成的塌陷）、金鑰稽核腳本；單元測試 140 項；測試機實測 DPAPI、測試連線、金鑰稽核皆通過；GitHub：DreamOver9183/RimTaiName |
-| Step 2～7 | 未開始 | 見第 11 節 |
+| Step 2 | 完成 | PR #8～#10：名字規則（與 Python 逐筆一致的 fixture）、內建字典、暱稱別名與 `NameProcessorService`；單元測試 252 項 |
+| Step 3～7 | 未開始 | 見第 11 節 |
 
 **驗證用 Mod 的現有程式（Step 4 會改寫成正式版）：**
 *   `Source/RimTaiName/Core/RimTaiNameMod.cs`：Mod 進入點；逐一套用 patch，單一失敗不影響其他。
