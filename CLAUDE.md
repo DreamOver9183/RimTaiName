@@ -104,6 +104,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **寫入文字框：** 只在 `DoWindowContents` Prefix 且 `Event.current.type == EventType.Layout` 時寫入 `NameContext.current`，寫入前先 `UI.UnfocusCurrentTextField()`。
 *   **插入工具列：** Transpiler 以 `CodeMatcher` 找 `rectAggregator.NewRow(17.5f)`，在前面插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；找不到時只停用工具列。
 *   **設定檔類寫入：** 先寫 `<path>.tmp`，目標存在時 `File.Replace(temp, path, null)`、否則 `File.Move`，`finally` 刪除殘留的暫存檔。讀檔失敗時從空狀態開始，不讓 Mod 載入中斷。
+*   **唯讀資料檔（字典）：** `Lazy<T>(…, ExecutionAndPublication)` 第一次查詢時載入，之後唯讀、可跨執行緒查詢。載入函式絕不能丟例外（`Lazy` 會記住例外，之後每次存取都丟），連空字串或非法路徑的 `ArgumentException`／`NotSupportedException` 都要接住，改成空資料加 `LoadError`。逐行解析時把只含空白的行、鍵、值都當成無效，否則會產生查不到的條目，或遮蔽後面重複的有效行。
 *   **讀檔失敗要分兩種：** 內容損壞（`XmlException`）→ 改名為 `.corrupt` 後從空狀態開始；暫時讀不到（`IOException`、`UnauthorizedAccessException`，例如防毒鎖定）→ 保留原檔並標記，存檔前先重讀合併，仍讀不到就拒絕覆寫。否則玩家累積的資料會被新存檔蓋掉。
 *   **自訂 XML 檔：** 一律 `XmlReader.Create(path, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null })` 再 `XDocument.Load(reader)`。存在屬性裡的文字不得含 Tab／CR／LF（屬性正規化會把它們變成空白，讀回後鍵值對不上）。
 *   **可測試的 HTTP 用戶端：** 正式建構子建立 `HttpClientHandler { AllowAutoRedirect = false }`；`internal` 建構子注入 `HttpMessageHandler`、逾時與重試延遲，測試用假 handler（延遲要尊重 `CancellationToken`，否則 HttpClient 逾時測不到）。
