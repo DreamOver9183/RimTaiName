@@ -152,6 +152,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   推送修正後立刻 `gh pr merge` 可能回報「Base branch was modified」；這是 GitHub 還在重算合併狀態，稍候重試即可，合併前確認 squash 內容含最新 commit。
 *   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach "D:\Claude Code\rtn_verify_<名稱>" <branch>`），避免工作區中下一個單元的未追蹤檔案混入，用完 `git worktree remove --force`。**不要放在 `%TEMP%`**：Windows 應用程式控制原則（Smart App Control）會擋下暫存資料夾中新建的測試 DLL（`FileLoadException 0x800711C7`），結果顯示「總計 0」，看起來像通過。
 *   多個 PR 平行審查時，切換分支會讓「已提交在別的分支」的檔案從工作區消失；回頭修前一個 PR 前，先 `git stash push --include-untracked -- <後續單元的路徑>`，修完、合併後再 `git stash pop`。
+*   給使用者的遊戲內測試步驟若要「內建字典命中」，名字先查真實字典（`Dictionary/BaseNames_zhTW.tsv`，格式 `namespace\tkey\tzh_tw`）：單元測試的假字典有 Gisele，真實字典沒有。
+*   設定頁按鈕在請求進行中會停用，連點不會送出第二次，也不會顯示請求限制的拒絕訊息；要在遊戲內看到拒絕訊息，得在上一個請求開始後的最短間隔（預設 3 秒）內，按**另一個**會送請求的按鈕，或等同一個按鈕恢復後立刻再按。
 *   本 session 的工具不允許 `Remove-Item Env:<名稱>`（會被誤判成刪除路徑）；清除環境變數用 `$env:<名稱> = $null`。
 
 ### PowerShell 5.1 腳本

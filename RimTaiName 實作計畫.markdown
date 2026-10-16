@@ -30,11 +30,13 @@
   - 單元測試共 252 項通過（另 4 項即時測試在未設定金鑰時略過）
   - 與原計畫的差異：`ProcessMode.Generate` 暫時丟 `NotSupportedException`（Step 6 實作）；別名只在對應欄位已是中文時才比對開窗時的英文
   - Mono 執行期的 Unicode 正規化仍待 Step 4 在遊戲內驗證（André、ＭＪ）
-- [ ] Step 3：Gemini 翻譯請求
+- [x] Step 3：Gemini 翻譯請求（2026-10-16）
   - [x] 共用規則檔 `Prompts/NameRules_zhTW.txt`、`name_rules.py` 改讀規則檔（提示逐字不變）、`PromptBuilder`（PR #11）
   - [x] `GeminiNameTranslator`（實作 `ILlmClient`）與 `RequestGate`；即時測試：三個字典沒有的名字經整條管線實際翻譯成功（PR #12）
   - [x] 接進 Mod、`UiJob`、測試連線經請求限制、開發者模式的「翻譯測試」（PR #13）
-  - [ ] 遊戲內驗證：開發者翻譯測試、請求限制、金鑰稽核
+  - [x] 遊戲內實測（`TestLog/4`）：翻譯測試兩次（三欄 Gemini；Gemini＋內建字典暱稱）、測試連線兩次皆 HTTP 200；連點時按鈕在請求進行中停用，沒有重複送出；稽核與 log 掃描都沒有金鑰
+  - 未在遊戲內觸發：請求限制的拒絕訊息（按鈕停用已擋下連點；拒絕邏輯由 `RequestGateTests` 涵蓋）、斷網
+  - 遊戲內測試用名：真實字典有 Fox（名、暱稱）、Miller，**沒有 Gisele**（只有單元測試的假字典有）
   - 與原計畫的差異：`TranslateAsync` 放在獨立的 `GeminiNameTranslator`（傳輸與翻譯語意分開）；新增 `Core/UiJob<T>` 供設定頁與 Step 4 共用
 - [ ] Step 4：命名視窗正式版（MVP 完成）
 - [ ] Step 5：字典 v1.0
@@ -43,7 +45,7 @@
 
 ## Context
 
-v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定案設計與路線圖。Step 0 與 Step 1 已完成並通過遊戲內實測，Step 2 已完成（皆為 2026-10-16）；下一步是 Step 3。
+v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定案設計與路線圖。Step 0～3 已完成，Step 0、1、3 並通過遊戲內實測（皆為 2026-10-16）；下一步是 Step 4。
 
 本文件把 v3 第 11 節的路線圖展開成可以直接執行的工作清單，每一步都列出：
 *   要建立或修改哪些檔案。
