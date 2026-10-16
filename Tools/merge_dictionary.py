@@ -14,7 +14,7 @@ import sys
 import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from name_rules import check, special_form  # noqa: E402
+from name_rules import check, entry_key, read_rows, special_form  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TR = os.path.join(ROOT, 'NameTable', 'translations')
@@ -32,8 +32,7 @@ def load_fixes(name):
     path = os.path.join(TR, name)
     if not os.path.exists(path):
         return {}
-    with open(path, encoding='utf-8-sig', newline='') as f:
-        return {(o['namespace'], o['text'].lower()): o for o in csv.DictReader(f)}
+    return {entry_key(o['namespace'], o['text']): o for o in read_rows(path)}
 
 
 def align_nicknames(out):
@@ -63,7 +62,7 @@ def main():
     for r in rows:
         gem = r['gemini_zh'].strip()
         offs = [o for o in r['zh_tw_official'].split(' / ') if o]
-        k = (r['namespace'], r['text'].lower())
+        k = entry_key(r['namespace'], r['text'])
         ov = overrides.get(k)
         special = special_form(r['text'], r['namespace'])
         if k in corrections:
@@ -104,7 +103,7 @@ def main():
     def settled(o):
         if o['source'] == 'correction' and all(f in INFO_FLAGS for f in o['flags']):
             return True  # a person chose this value; only hard errors still need a look
-        a = accepted.get((o['namespace'], o['text'].lower()))
+        a = accepted.get(entry_key(o['namespace'], o['text']))
         return a is not None and a['value'] == o['final_zh']  # a changed translation needs another look
 
     queue = [o for o in out if o['flags'] and not settled(o)]

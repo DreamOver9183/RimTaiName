@@ -19,7 +19,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from name_rules import check  # noqa: E402
+from name_rules import check, entry_key, read_rows  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TR = os.path.join(ROOT, 'NameTable', 'translations')
@@ -33,14 +33,11 @@ CORRECTION_FIELDS = ['namespace', 'text', 'value', 'reason']
 
 
 def key(row):
-    return row['namespace'], row['text'].lower()
+    return entry_key(row['namespace'], row['text'])
 
 
 def read_csv(path):
-    if not os.path.exists(path):
-        return []
-    with open(path, encoding='utf-8-sig', newline='') as f:
-        return list(csv.DictReader(f))
+    return read_rows(path) if os.path.exists(path) else []
 
 
 def write_csv(path, fields, rows):
@@ -76,18 +73,21 @@ def export(force):
 
 
 def apply():
+    if not os.path.exists(SHEET):
+        print(f'{SHEET} does not exist; run export first')
+        return 1
     sheet = read_csv(SHEET)
     accepted = {key(r): r for r in read_csv(ACCEPTED)}
     corrections = read_csv(CORRECTIONS)
     corrected = {key(r) for r in corrections}
     problems, fixed, kept = [], 0, 0
     for r in sheet:
-        decision = r['decision'].strip().lower()
+        decision = (r.get('decision') or '').strip().lower()
         if not decision:
             continue
         k = key(r)
         if decision == 'fix':
-            value = r['suggestion'].strip()
+            value = (r.get('suggestion') or '').strip()
             warnings = check(r['text'], value, r['namespace'])
             hard = [w for w in warnings if w != '名姓偏長']
             if not value or hard:
@@ -97,18 +97,19 @@ def apply():
                 problems.append(f"{r['namespace']}:{r['text']}: already in review_corrections.csv, left as it is")
                 continue
             corrections.append({'namespace': r['namespace'], 'text': r['text'], 'value': value,
-                                'reason': r['reason'].strip() or 'Step 5 校對'})
+                                'reason': (r.get('reason') or '').strip() or 'Step 5 校對'})
             corrected.add(k)
             accepted.pop(k, None)
             fixed += 1
         elif decision == 'keep':
             accepted[k] = {'namespace': r['namespace'], 'text': r['text'], 'value': r['final_zh'],
-                           'note': r['reason'].strip()}
+                           'note': (r.get('reason') or '').strip()}
             kept += 1
         else:
-            problems.append(f"{r['namespace']}:{r['text']}: unknown decision {r['decision']!r}")
-    write_csv(CORRECTIONS, CORRECTION_FIELDS, corrections)
-    write_csv(ACCEPTED, ACCEPTED_FIELDS, sorted(accepted.values(), key=lambda a: (a['namespace'], a['text'].lower())))
+            problems.append(f"{r['namespace']}:{r['text']}: unknown decision {decision!r}")
+    if fixed or kept:
+        write_csv(CORRECTIONS, CORRECTION_FIELDS, corrections)
+        write_csv(ACCEPTED, ACCEPTED_FIELDS, sorted(accepted.values(), key=lambda a: key(a)))
     for p in problems:
         print('SKIP', p)
     print(f'fix {fixed}, keep {kept}, skipped {len(problems)}; now run: python -I Tools/merge_dictionary.py')

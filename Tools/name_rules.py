@@ -1,4 +1,5 @@
 """Shared translation prompt rules and output checks for RimTaiName dictionary building."""
+import csv
 import os
 import re
 import unicodedata
@@ -69,6 +70,17 @@ def special_form(text, namespace):
     if SINGLE_LETTER.match(text):
         return text if namespace == 'name' else '阿' + text  # B / 阿B
     return None
+
+
+def entry_key(namespace, text):
+    """Key for matching dictionary rows with the fix lists: Trim, NFC and lower case, like the dictionary keys."""
+    return (namespace or '').strip(), unicodedata.normalize('NFC', (text or '').strip()).lower()
+
+
+def read_rows(path):
+    """CSV rows with a namespace and a text; blank lines left by spreadsheet editors are skipped."""
+    with open(path, encoding='utf-8-sig', newline='') as f:
+        return [r for r in csv.DictReader(f) if (r.get('namespace') or '').strip() and (r.get('text') or '').strip()]
 
 
 def is_cjk(c):
