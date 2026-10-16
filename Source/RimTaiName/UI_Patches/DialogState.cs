@@ -28,6 +28,9 @@ namespace RimTaiName.UI_Patches
         /// <summary>Values to write on the next Layout event; null entries are left untouched.</summary>
         public FieldWrite[] PendingWrite;
 
+        /// <summary>Translate or Generate: the latest request, for its button label, messages and log line.</summary>
+        public ProcessMode LastMode;
+
         /// <summary>closeOnClickedOutside is switched off while a request is in flight.</summary>
         public bool ClickOutsideSuspended;
 

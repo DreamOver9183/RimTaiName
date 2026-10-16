@@ -154,12 +154,17 @@ namespace RimTaiName.UI_Patches
                 if (state == null)
                     return;
                 RectDivider row = aggregator.NewRow(RowHeight);
-                float width = Mathf.Floor((row.Rect.width - ColumnGap) / 2f);
+                float width = Mathf.Floor((row.Rect.width - 2 * ColumnGap) / 3f);
                 bool running = state.Job.Running;
+                bool generating = running && state.LastMode == ProcessMode.Generate;
                 Rect translate = row.NewCol(width);
-                if (Widgets.ButtonText(translate, (running ? "RimTaiName_Translating" : "RimTaiName_Translate").Translate(), active: !running))
+                if (Widgets.ButtonText(translate, (running && !generating ? "RimTaiName_Translating" : "RimTaiName_Translate").Translate(), active: !running))
                     DialogTranslation.Translate(dialog, state);
                 TooltipHandler.TipRegion(translate, "RimTaiName_TranslateTip".Translate());
+                Rect generate = row.NewCol(width);
+                if (Widgets.ButtonText(generate, (generating ? "RimTaiName_Translating" : "RimTaiName_Generate").Translate(), active: !running))
+                    DialogTranslation.Generate(dialog, state);
+                TooltipHandler.TipRegion(generate, "RimTaiName_GenerateTip".Translate());
                 Rect restore = row.NewCol(width);
                 if (Widgets.ButtonText(restore, "RimTaiName_Restore".Translate()))
                     DialogTranslation.Restore(state);

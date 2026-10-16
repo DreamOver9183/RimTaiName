@@ -5,12 +5,18 @@
   <RimTaiName_Translate>翻譯姓名</RimTaiName_Translate>
   <RimTaiName_Translating>處理中...</RimTaiName_Translating>
   <RimTaiName_TranslateTip>把未鎖定的名、暱稱、姓翻成繁體中文：先查個人快取與內建字典，查不到的才一次送給 Gemini（需要 API Key）。</RimTaiName_TranslateTip>
+  <RimTaiName_Generate>生成中文名</RimTaiName_Generate>
+  <RimTaiName_GenerateTip>依小人的性別、背景故事、文化與異種族，替未鎖定的欄位取新的中文名（需要 API Key，每次送出 1 個請求）。鎖定的欄位不會變，並作為取名的風格參考；生成的名字不會存進個人快取。</RimTaiName_GenerateTip>
   <RimTaiName_Restore>還原</RimTaiName_Restore>
   <RimTaiName_RestoreTip>未鎖定的欄位恢復為開啟視窗時的內容。</RimTaiName_RestoreTip>
   <RimTaiName_Dialog_NoKey>{0}不在內建字典中，需要先在 Mod 設定中設定 Gemini API Key 才能翻譯。</RimTaiName_Dialog_NoKey>
   <RimTaiName_Dialog_RemoteFailed>無法翻譯{0}：{1}</RimTaiName_Dialog_RemoteFailed>
   <RimTaiName_Dialog_Rejected>Gemini 給的{0}譯名不符合命名規則，已保留原文。</RimTaiName_Dialog_Rejected>
   <RimTaiName_Dialog_NothingToTranslate>沒有需要翻譯的欄位：都已鎖定、空白或已是中文。</RimTaiName_Dialog_NothingToTranslate>
+  <RimTaiName_Dialog_GenerateNoKey>生成中文名需要 Gemini API Key，請先在 Mod 設定中設定。</RimTaiName_Dialog_GenerateNoKey>
+  <RimTaiName_Dialog_GenerateFailed>無法生成{0}：{1}</RimTaiName_Dialog_GenerateFailed>
+  <RimTaiName_Dialog_GenerateRejected>Gemini 取的{0}不符合命名規則，已保留原內容。</RimTaiName_Dialog_GenerateRejected>
+  <RimTaiName_Dialog_NothingToGenerate>沒有可以取名的欄位：都已鎖定。</RimTaiName_Dialog_NothingToGenerate>
 
   <!-- Gemini 結果 -->
   <RimTaiName_Gemini_Ok>連線成功：金鑰與模型都可以使用。</RimTaiName_Gemini_Ok>
