@@ -47,7 +47,8 @@
 | Step 0 技術驗證 | 完成，新生兒視窗待測 | Harmony patch、遊戲內 HTTPS、工具列與鎖頭、焦點寫入皆通過；在測試機 386 個 Mod 環境下正常。新生兒視窗改在開發者模式下測試（4.2） |
 | 開發環境 | 完成 | .NET 10 SDK 10.0.402；直接引用遊戲 DLL 編譯；`RimWorld\Mods\RimTaiName` 以 junction 連到專案；本機 git（branch `main`） |
 | 實作計畫 | 完成並重審 | `RimTaiName 實作計畫.markdown`：Step 0～7 的工作清單與進度勾選。10-16 重審遊戲 API 與 Gemini API，修正已回寫本文件（附錄 A） |
-| Step 1～7 | 未開始 | 見第 11 節 |
+| Step 1 | 程式完成，待遊戲內驗證 | PR #1～#5 已合併：金鑰儲存與遮蔽、Gemini 傳輸層（即時 API 測試通過）、個人快取、打包腳本、設定頁；單元測試 140 項；GitHub：DreamOver9183/RimTaiName |
+| Step 2～7 | 未開始 | 見第 11 節 |
 
 **驗證用 Mod 的現有程式（Step 4 會改寫成正式版）：**
 *   `Source/RimTaiName/Core/RimTaiNameMod.cs`：Mod 進入點；逐一套用 patch，單一失敗不影響其他。

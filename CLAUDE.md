@@ -65,6 +65,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | C# lint | `dotnet format Source/RimTaiName/RimTaiName.csproj --verify-no-changes`（測試專案同理） |
 | 單元測試 | `dotnet test --project Source/RimTaiName.Tests`（Microsoft.Testing.Platform，由根目錄 `global.json` 啟用） |
 | 即時 API 測試 | `$env:RIMTAINAME_KEY_FILE = (Resolve-Path RimTaiName_KEY_01.txt).Path; dotnet test --project Source/RimTaiName.Tests --filter-trait "Category=Live"; $env:RIMTAINAME_KEY_FILE = $null`。每次用掉約 4 次請求額度；未設環境變數時這些測試自動略過 |
+| 語言檔 lint | `python -I Tools/check_keys.py`：兩種語言的鍵與 `{0}` 一致、程式引用的 `"RimTaiName_…"` 都有定義。用列舉組出的動態鍵要登記在腳本的 `DYNAMIC` |
 | Python 語法檢查 | `python -I -m py_compile Tools/<file>.py`（沒有安裝 ruff／pyflakes） |
 | PowerShell 語法檢查 | `[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)`（沒有 PSScriptAnalyzer） |
 | 打包 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（含建置與金鑰掃描；`-NoBuild` 略過建置） |
@@ -78,7 +79,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 
 ## 開發流程 SOP（每完成一個獨立模組或可測試單元，依序執行，不可跳過）
 
-1.  **自我審查與測試：** 在功能分支（`feat/<短名>`、`fix/<短名>`）上執行 build（`-warnaserror`）、`dotnet format --verify-no-changes`、`dotnet test --project Source/RimTaiName.Tests`，以及變更檔案的 Python／PowerShell 語法檢查；改到 `Llm/` 時加跑即時 API 測試；自己讀一次 diff 做初步 Code Review。
+1.  **自我審查與測試：** 在功能分支（`feat/<短名>`、`fix/<短名>`）上執行 build（`-warnaserror`）、`dotnet format --verify-no-changes`、`dotnet test --project Source/RimTaiName.Tests`、`python -I Tools/check_keys.py`，以及變更檔案的 Python／PowerShell 語法檢查；改到 `Llm/` 時加跑即時 API 測試，改到打包腳本時跑 `test_package_mod.ps1`；自己讀一次 diff 做初步 Code Review。
 2.  **發起 PR：** `git push -u origin <branch>`，`gh pr create --base main`。內文附變更摘要與測試結果，結尾加 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`。
 3.  **雙軌審核：**
     *   先請 Copilot 審查：`gh pr edit <PR#> --add-reviewer "@copilot"`，再以 `gh pr view <PR#> --json reviews,comments` 檢查是否完成。
@@ -104,6 +105,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **讀檔失敗要分兩種：** 內容損壞（`XmlException`）→ 改名為 `.corrupt` 後從空狀態開始；暫時讀不到（`IOException`、`UnauthorizedAccessException`，例如防毒鎖定）→ 保留原檔並標記，存檔前先重讀合併，仍讀不到就拒絕覆寫。否則玩家累積的資料會被新存檔蓋掉。
 *   **自訂 XML 檔：** 一律 `XmlReader.Create(path, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null })` 再 `XDocument.Load(reader)`。存在屬性裡的文字不得含 Tab／CR／LF（屬性正規化會把它們變成空白，讀回後鍵值對不上）。
 *   **可測試的 HTTP 用戶端：** 正式建構子建立 `HttpClientHandler { AllowAutoRedirect = false }`；`internal` 建構子注入 `HttpMessageHandler`、逾時與重試延遲，測試用假 handler（延遲要尊重 `CancellationToken`，否則 HttpClient 逾時測不到）。
+*   **UI 觸發的背景請求：** 主執行緒建立 `CancellationTokenSource` 並遞增世代編號，再 `Task.Run`；背景只在世代仍相符時寫入 volatile 結果欄位。金鑰變更、關閉頁面時呼叫 reset（遞增世代、取消、清除結果）。結果的記錄與 `Translate()` 都在主執行緒第一次繪製結果時進行（`Verse.Log` 是遊戲 API）。
+*   **受限的文字輸入：** 用 `Widgets.TextField(rect, text, maxLength, regex)`，超長或不符的輸入直接被拒絕，不要事後 `Substring` 截斷（可能切斷代理對）。
 *   **給玩家或記錄的錯誤細節：** 先遮蔽金鑰、再截斷（Gemini 為 200 字）；截斷點落在高代理字元時往前退一格，不切斷代理對。錯誤 JSON 沒有 `message` 時改用原始回應內容。
 *   **字典產生：** Python 工具鏈 `extract_vanilla_names.py` → `build_full_input.py` → `agy_translate.py` → `merge_dictionary.py`；人工修正寫在 `NameTable/translations/` 的 CSV，不直接改 TSV。
 
