@@ -1,9 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <!-- Naming dialog -->
   <RimTaiName_LockTip>Locked: translation will not change this field</RimTaiName_LockTip>
   <RimTaiName_Restore>Restore</RimTaiName_Restore>
   <RimTaiName_Spike_WriteUnfocus>Test write (unfocus)</RimTaiName_Spike_WriteUnfocus>
   <RimTaiName_Spike_WriteKeepFocus>Test write (keep focus)</RimTaiName_Spike_WriteKeepFocus>
-  <RimTaiName_Spike_HttpsTest>Test HTTPS connection</RimTaiName_Spike_HttpsTest>
-  <RimTaiName_Spike_HttpsStatus>HTTPS test: {0}</RimTaiName_Spike_HttpsStatus>
+
+  <!-- Gemini results -->
+  <RimTaiName_Gemini_Ok>Connected: the key and the model both work.</RimTaiName_Gemini_Ok>
+  <RimTaiName_Gemini_NoKey>No API key is set.</RimTaiName_Gemini_NoKey>
+  <RimTaiName_Gemini_InvalidModelId>The model id is not valid.</RimTaiName_Gemini_InvalidModelId>
+  <RimTaiName_Gemini_InvalidKey>The API key is not valid. Please check it.</RimTaiName_Gemini_InvalidKey>
+  <RimTaiName_Gemini_Forbidden>This key may not use this model, or the key is restricted.</RimTaiName_Gemini_Forbidden>
+  <RimTaiName_Gemini_BadRequest>Gemini rejected the request: {0}</RimTaiName_Gemini_BadRequest>
+  <RimTaiName_Gemini_PaymentRequired>This model needs paid credit.</RimTaiName_Gemini_PaymentRequired>
+  <RimTaiName_Gemini_ModelNotFound>This model id does not exist.</RimTaiName_Gemini_ModelNotFound>
+  <RimTaiName_Gemini_QuotaExceeded>Today's free quota is used up. It resets at {0}.</RimTaiName_Gemini_QuotaExceeded>
+  <RimTaiName_Gemini_RateLimited>Too many requests. Please try again shortly.</RimTaiName_Gemini_RateLimited>
+  <RimTaiName_Gemini_ServerError>Gemini is not responding right now. Please try again later.</RimTaiName_Gemini_ServerError>
+  <RimTaiName_Gemini_Timeout>The connection timed out. Please try again later.</RimTaiName_Gemini_Timeout>
+  <RimTaiName_Gemini_Network>Cannot reach Gemini. Please check your network.</RimTaiName_Gemini_Network>
+  <RimTaiName_Gemini_UnexpectedStatus>Gemini returned an unexpected status (HTTP {0}).</RimTaiName_Gemini_UnexpectedStatus>
+  <RimTaiName_Gemini_InvalidResponse>Gemini's response could not be read. Please try again later.</RimTaiName_Gemini_InvalidResponse>
+
+  <!-- Settings: API key -->
+  <RimTaiName_Settings_KeyHeading>Gemini API key</RimTaiName_Settings_KeyHeading>
+  <RimTaiName_Settings_KeySaved>Saved key: {0}</RimTaiName_Settings_KeySaved>
+  <RimTaiName_Settings_KeyNone>No key is set. Vanilla names can still be translated with the built-in dictionary; names from other mods and "Generate Chinese name" need a key.</RimTaiName_Settings_KeyNone>
+  <RimTaiName_Settings_StorageDpapi>Storage: encrypted with Windows DPAPI in your local config folder; only your Windows account can decrypt it. It is never written to the mod settings file or to saves.</RimTaiName_Settings_StorageDpapi>
+  <RimTaiName_Settings_StorageSession>Storage: on this platform the key is only kept for this game session; enter it again after restarting.</RimTaiName_Settings_StorageSession>
+  <RimTaiName_Settings_KeyError>Key problem: {0} (if you copied your settings from another computer, enter the key again)</RimTaiName_Settings_KeyError>
+  <RimTaiName_Settings_KeySave>Save</RimTaiName_Settings_KeySave>
+  <RimTaiName_Settings_KeyPaste>Paste from clipboard</RimTaiName_Settings_KeyPaste>
+  <RimTaiName_Settings_KeyShow>Show</RimTaiName_Settings_KeyShow>
+  <RimTaiName_Settings_KeyHide>Hide</RimTaiName_Settings_KeyHide>
+  <RimTaiName_Settings_KeyClear>Clear key</RimTaiName_Settings_KeyClear>
+  <RimTaiName_Settings_KeyCleared>The key was cleared.</RimTaiName_Settings_KeyCleared>
+  <RimTaiName_Settings_KeySavedNow>Key saved: {0}</RimTaiName_Settings_KeySavedNow>
+  <RimTaiName_Settings_KeySaveEmpty>There is no key to save (the field or the clipboard is empty).</RimTaiName_Settings_KeySaveEmpty>
+  <RimTaiName_Settings_KeySaveInvalidCharacters>A key may only contain letters, digits and plain symbols, without spaces.</RimTaiName_Settings_KeySaveInvalidCharacters>
+  <RimTaiName_Settings_KeySaveTooShort>The key is too short. Make sure you copied all of it.</RimTaiName_Settings_KeySaveTooShort>
+  <RimTaiName_Settings_KeySaveTooLong>The key is too long. Make sure you did not copy extra text.</RimTaiName_Settings_KeySaveTooLong>
+  <RimTaiName_Settings_KeySaveWriteFailed>The key file could not be written. See the error above.</RimTaiName_Settings_KeySaveWriteFailed>
+  <RimTaiName_Settings_Test>Test connection</RimTaiName_Settings_Test>
+  <RimTaiName_Settings_Testing>Testing...</RimTaiName_Settings_Testing>
+  <RimTaiName_Settings_TestNote>Sends one tiny request, which uses 1 request of your free quota.</RimTaiName_Settings_TestNote>
+
+  <!-- Settings: model and usage -->
+  <RimTaiName_Settings_ModelHeading>Model and usage</RimTaiName_Settings_ModelHeading>
+  <RimTaiName_Settings_ModelId>Model id:</RimTaiName_Settings_ModelId>
+  <RimTaiName_Settings_ModelDefault>Default</RimTaiName_Settings_ModelDefault>
+  <RimTaiName_Settings_ModelInvalid>Invalid format (lower-case letters, digits, "." and "-" only); still using {0}.</RimTaiName_Settings_ModelInvalid>
+  <RimTaiName_Settings_MinInterval>Minimum time between requests: {0} s</RimTaiName_Settings_MinInterval>
+  <RimTaiName_Settings_MinIntervalTip>Prevents bursts of requests from using up the per-minute quota.</RimTaiName_Settings_MinIntervalTip>
+  <RimTaiName_Settings_KeepAddress>Keep vanilla form of address</RimTaiName_Settings_KeepAddress>
+  <RimTaiName_Settings_KeepAddressTip>When the nickname field is empty, vanilla addresses the pawn by first or last name. If enabled, translating fills the nickname with that translated name so the pawn is still addressed the same way.</RimTaiName_Settings_KeepAddressTip>
+
+  <!-- Settings: cache -->
+  <RimTaiName_Settings_CacheHeading>Personal translation cache</RimTaiName_Settings_CacheHeading>
+  <RimTaiName_Settings_CacheCount>{0} entries (translations from Gemini and your own corrections).</RimTaiName_Settings_CacheCount>
+  <RimTaiName_Settings_CacheError>Cache file error: {0}</RimTaiName_Settings_CacheError>
+  <RimTaiName_Settings_CacheClear>Clear cache</RimTaiName_Settings_CacheClear>
+  <RimTaiName_Settings_CacheClearConfirm>Clear all {0} cached translations? Your own corrections are deleted too. This cannot be undone.</RimTaiName_Settings_CacheClearConfirm>
+  <RimTaiName_Settings_CacheOpenFolder>Open config folder</RimTaiName_Settings_CacheOpenFolder>
+
+  <!-- Settings: privacy -->
+  <RimTaiName_Settings_PrivacyHeading>Privacy and key safety</RimTaiName_Settings_PrivacyHeading>
+  <RimTaiName_Settings_PrivacyText>• Names (plus gender, backstories and similar in phase 2) are sent over HTTPS to Google's Gemini API only when you press "Translate name", "Generate Chinese name" or "Test connection". This mod collects no statistics.\n• Content sent on the free tier is used by Google to improve its products. Under the Gemini API terms, users in the EEA, Switzerland and the UK may only use paid services.\n• Create a dedicated key for this mod in Google AI Studio, in a project without billing: it can then only use the free quota and cannot cost money if it leaks. New keys (starting with "AQ.") can only call the Gemini API by default.\n• If you suspect a leak, delete and recreate the key in AI Studio, then press "Clear key" above.\n• Other mods running in the same game could in theory read the key from memory; this cannot be fully prevented.</RimTaiName_Settings_PrivacyText>
 </LanguageData>

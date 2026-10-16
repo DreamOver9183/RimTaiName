@@ -1,9 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <!-- 命名視窗 -->
   <RimTaiName_LockTip>鎖定：翻譯時不變更此欄</RimTaiName_LockTip>
   <RimTaiName_Restore>還原</RimTaiName_Restore>
   <RimTaiName_Spike_WriteUnfocus>測試寫入（取消焦點）</RimTaiName_Spike_WriteUnfocus>
   <RimTaiName_Spike_WriteKeepFocus>測試寫入（保留焦點）</RimTaiName_Spike_WriteKeepFocus>
-  <RimTaiName_Spike_HttpsTest>測試 HTTPS 連線</RimTaiName_Spike_HttpsTest>
-  <RimTaiName_Spike_HttpsStatus>HTTPS 連線測試：{0}</RimTaiName_Spike_HttpsStatus>
+
+  <!-- Gemini 結果 -->
+  <RimTaiName_Gemini_Ok>連線成功：金鑰與模型都可以使用。</RimTaiName_Gemini_Ok>
+  <RimTaiName_Gemini_NoKey>尚未設定 API Key。</RimTaiName_Gemini_NoKey>
+  <RimTaiName_Gemini_InvalidModelId>模型代號格式不正確。</RimTaiName_Gemini_InvalidModelId>
+  <RimTaiName_Gemini_InvalidKey>API Key 無效，請確認金鑰是否正確。</RimTaiName_Gemini_InvalidKey>
+  <RimTaiName_Gemini_Forbidden>這把金鑰沒有權限使用此模型，或金鑰受到限制。</RimTaiName_Gemini_Forbidden>
+  <RimTaiName_Gemini_BadRequest>Gemini 拒絕了請求：{0}</RimTaiName_Gemini_BadRequest>
+  <RimTaiName_Gemini_PaymentRequired>此模型需要付費額度。</RimTaiName_Gemini_PaymentRequired>
+  <RimTaiName_Gemini_ModelNotFound>找不到這個模型代號。</RimTaiName_Gemini_ModelNotFound>
+  <RimTaiName_Gemini_QuotaExceeded>今日免費額度已用完，將於 {0} 重置。</RimTaiName_Gemini_QuotaExceeded>
+  <RimTaiName_Gemini_RateLimited>請求太頻繁，請稍後再試。</RimTaiName_Gemini_RateLimited>
+  <RimTaiName_Gemini_ServerError>Gemini 伺服器暫時無法回應，請稍後再試。</RimTaiName_Gemini_ServerError>
+  <RimTaiName_Gemini_Timeout>連線逾時，請稍後再試。</RimTaiName_Gemini_Timeout>
+  <RimTaiName_Gemini_Network>無法連線到 Gemini，請檢查網路。</RimTaiName_Gemini_Network>
+  <RimTaiName_Gemini_UnexpectedStatus>Gemini 回傳了非預期的狀態（HTTP {0}）。</RimTaiName_Gemini_UnexpectedStatus>
+  <RimTaiName_Gemini_InvalidResponse>Gemini 的回應無法解析，請稍後再試。</RimTaiName_Gemini_InvalidResponse>
+
+  <!-- 設定頁：API Key -->
+  <RimTaiName_Settings_KeyHeading>Gemini API Key</RimTaiName_Settings_KeyHeading>
+  <RimTaiName_Settings_KeySaved>已儲存的金鑰：{0}</RimTaiName_Settings_KeySaved>
+  <RimTaiName_Settings_KeyNone>尚未設定金鑰。原版名字仍可用內建字典翻譯；其他 Mod 的名字與「生成中文名」需要金鑰。</RimTaiName_Settings_KeyNone>
+  <RimTaiName_Settings_StorageDpapi>儲存方式：以 Windows DPAPI 加密後存在本機設定資料夾，只有目前的 Windows 帳號能解密；不會寫入 Mod 設定檔或存檔。</RimTaiName_Settings_StorageDpapi>
+  <RimTaiName_Settings_StorageSession>儲存方式：此平台只在本次遊戲期間記憶金鑰，關閉遊戲後需要重新輸入。</RimTaiName_Settings_StorageSession>
+  <RimTaiName_Settings_KeyError>金鑰問題：{0}（若是從其他電腦複製設定，請重新輸入金鑰）</RimTaiName_Settings_KeyError>
+  <RimTaiName_Settings_KeySave>儲存</RimTaiName_Settings_KeySave>
+  <RimTaiName_Settings_KeyPaste>從剪貼簿貼上</RimTaiName_Settings_KeyPaste>
+  <RimTaiName_Settings_KeyShow>顯示</RimTaiName_Settings_KeyShow>
+  <RimTaiName_Settings_KeyHide>隱藏</RimTaiName_Settings_KeyHide>
+  <RimTaiName_Settings_KeyClear>清除金鑰</RimTaiName_Settings_KeyClear>
+  <RimTaiName_Settings_KeyCleared>金鑰已清除。</RimTaiName_Settings_KeyCleared>
+  <RimTaiName_Settings_KeySavedNow>金鑰已儲存：{0}</RimTaiName_Settings_KeySavedNow>
+  <RimTaiName_Settings_KeySaveEmpty>沒有可儲存的金鑰（輸入欄或剪貼簿是空的）。</RimTaiName_Settings_KeySaveEmpty>
+  <RimTaiName_Settings_KeySaveInvalidCharacters>金鑰只能包含英文字母、數字與一般符號，不能有空白或中文。</RimTaiName_Settings_KeySaveInvalidCharacters>
+  <RimTaiName_Settings_KeySaveTooShort>金鑰太短，請確認是否完整複製。</RimTaiName_Settings_KeySaveTooShort>
+  <RimTaiName_Settings_KeySaveTooLong>金鑰太長，請確認是否多複製了其他文字。</RimTaiName_Settings_KeySaveTooLong>
+  <RimTaiName_Settings_KeySaveWriteFailed>無法寫入金鑰檔，請查看上方的錯誤訊息。</RimTaiName_Settings_KeySaveWriteFailed>
+  <RimTaiName_Settings_Test>測試連線</RimTaiName_Settings_Test>
+  <RimTaiName_Settings_Testing>測試中...</RimTaiName_Settings_Testing>
+  <RimTaiName_Settings_TestNote>會送出一次極小的請求，用掉 1 次免費額度。</RimTaiName_Settings_TestNote>
+
+  <!-- 設定頁：模型與用量 -->
+  <RimTaiName_Settings_ModelHeading>模型與用量</RimTaiName_Settings_ModelHeading>
+  <RimTaiName_Settings_ModelId>模型代號：</RimTaiName_Settings_ModelId>
+  <RimTaiName_Settings_ModelDefault>還原預設</RimTaiName_Settings_ModelDefault>
+  <RimTaiName_Settings_ModelInvalid>格式不正確（只能用小寫英文、數字、「.」與「-」），目前仍使用 {0}。</RimTaiName_Settings_ModelInvalid>
+  <RimTaiName_Settings_MinInterval>兩次請求的最短間隔：{0} 秒</RimTaiName_Settings_MinInterval>
+  <RimTaiName_Settings_MinIntervalTip>避免短時間內大量請求而用光每分鐘額度。</RimTaiName_Settings_MinIntervalTip>
+  <RimTaiName_Settings_KeepAddress>保留原版稱呼</RimTaiName_Settings_KeepAddress>
+  <RimTaiName_Settings_KeepAddressTip>暱稱欄空白時，原版會用名或姓稱呼小人。開啟後，翻譯時會把對應的中文名或姓填入暱稱欄，維持原本的稱呼。</RimTaiName_Settings_KeepAddressTip>
+
+  <!-- 設定頁：快取 -->
+  <RimTaiName_Settings_CacheHeading>個人翻譯快取</RimTaiName_Settings_CacheHeading>
+  <RimTaiName_Settings_CacheCount>目前有 {0} 筆（Gemini 的譯名與你自己修正的譯名）。</RimTaiName_Settings_CacheCount>
+  <RimTaiName_Settings_CacheError>快取檔讀寫失敗：{0}</RimTaiName_Settings_CacheError>
+  <RimTaiName_Settings_CacheClear>清除快取</RimTaiName_Settings_CacheClear>
+  <RimTaiName_Settings_CacheClearConfirm>確定要清除全部 {0} 筆個人快取嗎？你自己修正的譯名也會一併刪除，且無法復原。</RimTaiName_Settings_CacheClearConfirm>
+  <RimTaiName_Settings_CacheOpenFolder>開啟設定資料夾</RimTaiName_Settings_CacheOpenFolder>
+
+  <!-- 設定頁：隱私 -->
+  <RimTaiName_Settings_PrivacyHeading>隱私與金鑰安全</RimTaiName_Settings_PrivacyHeading>
+  <RimTaiName_Settings_PrivacyText>• 只有在你按下「翻譯姓名」「生成中文名」或「測試連線」時，才會把姓名（第二階段另含性別、背景故事等）以 HTTPS 送往 Google 的 Gemini API；本模組不做任何統計或回報。\n• 免費層送出的內容會被 Google 用於改善產品。依 Gemini API 條款，歐洲經濟區、瑞士與英國的使用者只能使用付費服務。\n• 建議在 Google AI Studio 為本模組建立一把專用金鑰，並建在沒有啟用帳單的專案上：只能使用免費額度，即使外洩也不會產生費用。新發的金鑰（AQ. 開頭）預設只能呼叫 Gemini API。\n• 懷疑金鑰外洩時，到 AI Studio 刪除並重建金鑰，再按上方的「清除金鑰」。\n• 同一個遊戲中的其他 Mod 理論上仍可能讀取記憶體中的金鑰，這無法完全防止。</RimTaiName_Settings_PrivacyText>
 </LanguageData>
