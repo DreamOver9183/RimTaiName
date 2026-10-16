@@ -1,0 +1,310 @@
+{
+  "game_version": "1.6.4871 rev590",
+  "bank": {
+    "First_Male": {
+      "count": 352,
+      "categories": {
+        "(none)": 136,
+        "British names": 42,
+        "Tynan's custom names": 43,
+        "Japanese names": 56,
+        "Russian names": 75
+      }
+    },
+    "First_Female": {
+      "count": 308,
+      "categories": {
+        "(none)": 121,
+        "British names": 43,
+        "Tynan's custom names": 17,
+        "Japanese names": 58,
+        "Russian": 69
+      }
+    },
+    "Last": {
+      "count": 988,
+      "categories": {
+        "(none)": 988
+      }
+    },
+    "Nick_Male": {
+      "count": 12,
+      "categories": {
+        "Misc": 5,
+        "Titles": 2,
+        "Body": 5
+      }
+    },
+    "Nick_Female": {
+      "count": 9,
+      "categories": {
+        "Misc": 6,
+        "Titles": 3
+      }
+    },
+    "Nick_Unisex": {
+      "count": 42,
+      "categories": {
+        "(none)": 42
+      }
+    }
+  },
+  "solid": {
+    "by_source_asset": {
+      "solid_bio/backstories": 299,
+      "rare_bio/Rare": 9,
+      "solid_name/Requested": 1,
+      "solid_name/names": 16135
+    },
+    "nick_relation": {
+      "solid_name/explicit": 10138,
+      "solid_name/empty": 4087,
+      "solid_name/alias_first": 1290,
+      "solid_name/alias_last": 621,
+      "solid_bio/explicit": 203,
+      "solid_bio/empty": 55,
+      "solid_bio/alias_first": 30,
+      "solid_bio/alias_last": 11,
+      "rare_bio/explicit": 5,
+      "rare_bio/empty": 3,
+      "rare_bio/alias_first": 1
+    },
+    "pirate_king_bios": 104,
+    "bio_spawn_categories": {
+      "Offworld": 266,
+      "Pirate": 197,
+      "Cult": 72,
+      "Outlander": 65,
+      "Tribal": 10,
+      "ImperialCommon": 8,
+      "Farmer": 7,
+      "Hunter": 4,
+      "Trader": 4,
+      "Slave": 3,
+      "Scientist": 3,
+      "ImperialRoyal": 2,
+      "Miner": 1,
+      "Civil": 1,
+      "TribalMiner": 1
+    },
+    "gender": {
+      "solid_bio/male": 240,
+      "solid_bio/female": 48,
+      "solid_bio/either": 11,
+      "rare_bio/male": 8,
+      "rare_bio/female": 1,
+      "solid_name/male": 13424,
+      "solid_name/female": 1975,
+      "solid_name/either": 737
+    }
+  },
+  "dlc_lists": {
+    "Names/Imperial_First_Male": {
+      "dlc": "Royalty",
+      "used_by": "Sophian culture (NamerPersonSophian)",
+      "en": 75,
+      "zh_tw": 75,
+      "zh_tw_aligned": true
+    },
+    "Names/Imperial_First_Female": {
+      "dlc": "Royalty",
+      "used_by": "Sophian culture (NamerPersonSophianFemale)",
+      "en": 71,
+      "zh_tw": 71,
+      "zh_tw_aligned": true
+    },
+    "Names/Imperial_Last": {
+      "dlc": "Royalty",
+      "used_by": "Sophian culture",
+      "en": 55,
+      "zh_tw": 55,
+      "zh_tw_aligned": true
+    },
+    "Names/Nick_Unisex_Pig": {
+      "dlc": "Biotech",
+      "used_by": "Pigskin xenotype (NamerPersonPigskin)",
+      "en": 152,
+      "zh_tw": 0,
+      "zh_tw_aligned": false
+    },
+    "Names/Nick_Unisex_Waster": {
+      "dlc": "Biotech",
+      "used_by": "Waster xenotype (NamerPersonWaster)",
+      "en": 135,
+      "zh_tw": 0,
+      "zh_tw_aligned": false
+    },
+    "Names/Creepjoiner_Last": {
+      "dlc": "Anomaly",
+      "used_by": "Creepjoiner (NamerPersonCreepjoiner)",
+      "en": 83,
+      "zh_tw": 81,
+      "zh_tw_aligned": false
+    },
+    "Names/Creepjoiner_Nick": {
+      "dlc": "Anomaly",
+      "used_by": "Creepjoiner (NamerPersonCreepjoiner)",
+      "en": 157,
+      "zh_tw": 157,
+      "zh_tw_aligned": true
+    }
+  },
+  "generators": {
+    "WordParts/Syllables_Impid": {
+      "dlc": "Biotech",
+      "used_by": "Impid xenotype: first/last syllables",
+      "en": 66,
+      "zh_tw": 66,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": true
+    },
+    "WordParts/Syllables_Yttakin": {
+      "dlc": "Biotech",
+      "used_by": "Yttakin xenotype: first/last syllables",
+      "en": 56,
+      "zh_tw": 56,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": true
+    },
+    "WordParts/Syllables_Pig": {
+      "dlc": "Biotech",
+      "used_by": "Pigskin xenotype: first/last syllables",
+      "en": 62,
+      "zh_tw": 62,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": true
+    },
+    "WordParts/Syllables_Waster": {
+      "dlc": "Biotech",
+      "used_by": "Waster xenotype: first/last syllables",
+      "en": 53,
+      "zh_tw": 53,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": true
+    },
+    "WordParts/Syllables_Dirtmole": {
+      "dlc": "Biotech",
+      "used_by": "Dirtmole xenotype: last-name syllables",
+      "en": 67,
+      "zh_tw": 67,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": true
+    },
+    "WordParts/Syllables_Byzantinian": {
+      "dlc": "Royalty",
+      "used_by": "Sophian culture: WordImperial syllables",
+      "en": 81,
+      "zh_tw": 81,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": false
+    },
+    "WordParts/Syllables_Galician": {
+      "dlc": "Ideology",
+      "used_by": "Corunan culture: WordTribal syllables",
+      "en": 180,
+      "zh_tw": 142,
+      "zh_tw_aligned": false,
+      "zh_tw_is_chinese": true
+    },
+    "Words/Foreign/Tribal": {
+      "dlc": "Ideology",
+      "used_by": "Corunan culture: WordTribal words",
+      "en": 88,
+      "zh_tw": 142,
+      "zh_tw_aligned": false,
+      "zh_tw_is_chinese": true
+    },
+    "Words/Nouns/Colors": {
+      "dlc": "Ideology",
+      "used_by": "Corunan culture: [Color]",
+      "en": 8,
+      "zh_tw": 8,
+      "zh_tw_aligned": true,
+      "zh_tw_is_chinese": true
+    },
+    "Words/Nouns/Animals": {
+      "dlc": "Ideology",
+      "used_by": "Corunan culture: [Animal]",
+      "en": 178,
+      "zh_tw": 186,
+      "zh_tw_aligned": false,
+      "zh_tw_is_chinese": true
+    },
+    "Words/Nouns/Animals_Badass": {
+      "dlc": "Ideology",
+      "used_by": "Corunan culture: '[AnimalBadass]' nickname",
+      "en": 70,
+      "zh_tw": 66,
+      "zh_tw_aligned": false,
+      "zh_tw_is_chinese": true
+    },
+    "NamerPersonImpid.nameEnd": {
+      "dlc": "Biotech",
+      "used_by": "Impid xenotype",
+      "en": 21,
+      "zh_tw": 21,
+      "zh_tw_aligned": true
+    },
+    "NamerPersonYttakin.nameEnd": {
+      "dlc": "Biotech",
+      "used_by": "Yttakin xenotype",
+      "en": 15,
+      "zh_tw": 15,
+      "zh_tw_aligned": true
+    },
+    "NamerPersonPigskin.maybeHyphen": {
+      "dlc": "Biotech",
+      "used_by": "Pigskin xenotype",
+      "en": 2,
+      "zh_tw": 2,
+      "zh_tw_aligned": true
+    },
+    "NamerPersonPigskin.nameEnd": {
+      "dlc": "Biotech",
+      "used_by": "Pigskin xenotype",
+      "en": 18,
+      "zh_tw": 18,
+      "zh_tw_aligned": true
+    },
+    "NamerPersonWaster.End": {
+      "dlc": "Biotech",
+      "used_by": "Waster xenotype",
+      "en": 27,
+      "zh_tw": 27,
+      "zh_tw_aligned": true
+    },
+    "NamerPersonDirtmole_Male.End": {
+      "dlc": "Biotech",
+      "used_by": "Dirtmole xenotype (male)",
+      "en": 31,
+      "zh_tw": 31,
+      "zh_tw_aligned": true
+    },
+    "NamerPersonDirtmole_Female.End": {
+      "dlc": "Biotech",
+      "used_by": "Dirtmole xenotype (female)",
+      "en": 31,
+      "zh_tw": 31,
+      "zh_tw_aligned": true
+    }
+  },
+  "tokens": {
+    "total": 24596,
+    "by_namespace": {
+      "name": 17762,
+      "nick": 6834
+    },
+    "by_namespace_tier": {
+      "name/tier1": 1591,
+      "name/tier2": 425,
+      "name/tier3": 15532,
+      "name/tier4": 214,
+      "nick/tier1": 63,
+      "nick/tier2": 199,
+      "nick/tier3": 6237,
+      "nick/tier4": 335
+    },
+    "with_official_zh_tw": 355,
+    "freq1_solid_only": 18450
+  }
+}

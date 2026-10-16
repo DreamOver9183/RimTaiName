@@ -1,0 +1,16 @@
+# Build output (rebuild with dotnet build)
+Source/**/obj/
+Source/**/bin/
+1.6/Assemblies/*.dll
+
+# Packaging output (Tools/package_mod.ps1)
+dist/
+
+# Python caches
+__pycache__/
+
+# Raw per-batch model responses; the merged CSVs are kept
+NameTable/**/raw/
+
+# Player.log from the test PC (contains local paths)
+TestLog/

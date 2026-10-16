@@ -1,0 +1,46 @@
+﻿namespace,text,value,reason
+name,Theophas,西奧法斯,官方「里歐菲斯」誤把 Theo 譯成里歐；依官方 Theodore → 西奧多 的寫法
+name,Theophila,,官方「里奧非拉」與 Theophas 同樣錯誤，改用 Gemini
+name,Constantina,,官方「君士坦丁」是男性形
+name,Athenais,,官方「阿斯尼亞斯」失真
+name,Stakius,,官方「塔奇斯」漏掉 S 音
+name,Basil,,官方「羅勒」是香草名
+name,Galla,,官方「五倍子」是中藥材
+name,Bardanes,,官方「菲利皮科斯」是另一個人名
+name,Lekapenos,,官方「羅曼努斯」是另一個人名
+name,Himerius,,官方「荷馬」是另一個人名
+name,Prodromus,,官方「普羅倫斯」失真
+name,Pelagia,,官方「呂訥」失真
+name,Eugenia,,官方「尼婭」只譯了字尾
+name,Sabbas,,官方「聖薩巴」多加了「聖」
+name,Petros,,官方「蓓朵思」用女性用字譯男性名
+name,Demetrios,,官方「蒂米琪」用女性用字且失真
+name,Heracus,,官方「賀利氏」是企業譯名
+name,Parsos,,官方「帕森斯」失真
+name,Mozis,,官方「莫森斯」失真
+name,Alexios,阿歷克塞,官方在男女名單各有一個譯名；取男性名單的「阿歷克塞」
+name,Petronas,派特羅那斯,官方在名單中出現兩次且譯名不同；取較完整的「派特羅那斯」
+nick,Skit,竄影,官方「短劇」誤把 Skit 當成戲劇；Gemini low 也犯同樣錯誤，採 medium 樣本的譯名
+name,Maria,瑪麗亞,官方「瑪麗」是 Mary，且與 Marie 撞名
+name,Anthusa,,官方「歐斯薩」漏掉 An
+name,Athanasia,,官方「奧蘭娜西亞」失真
+name,Thekla,,官方「索可拉」失真
+name,Iuliana,,官方「依莉亞娜」失真
+name,Joannina,,官方「江妮娜」失真
+name,Doukid,,官方「杜卡斯」與 Doukas 撞名
+name,Nektaros,,官方「奈科塔里」被截短
+name,Rhode,,官方「羅德」用男性用字譯女性名
+name,Palatina,,官方「帕拉丁」是男性形
+name,Kastamos,,官方「卡斯塔諾斯」把 m 譯成 n
+name,Theophact,,官方「提奧菲勒」字尾失真
+name,Konstantia,,官方「克斯坦提亞」漏音
+name,Arianites,,官方「阿里安尼」被截短
+nick,Raven,渡鴉,官方「烏黑」是形容詞
+nick,Goodie,好好先生,官方「誘人」語意不符
+nick,Grist,磨渣,官方「有利」取自片語，作暱稱不通
+nick,Outside,世外客,官方「外面」作暱稱不通
+nick,Oldie,老骨頭,官方「古老」是形容詞
+nick,White,小白,官方「白色」作暱稱不通
+nick,Wisp,微光,官方「縷」只有量詞
+nick,Skin,皮囊,官方「赤裸」語意不符
+nick,Glitch,故障,官方「干擾」語意偏差

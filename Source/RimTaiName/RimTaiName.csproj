@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>RimTaiName</RootNamespace>
+    <AssemblyName>RimTaiName</AssemblyName>
+    <OutputPath>..\..\1.6\Assemblies\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DebugType>none</DebugType>
+    <!-- Compile against the game's own Mono assemblies so only APIs that exist in RimWorld can be used,
+         and no reference-assembly packages need to be downloaded. -->
+    <NoStdLib>true</NoStdLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <RimWorldDir Condition="'$(RimWorldDir)' == ''">D:\SteamLibrary\steamapps\common\RimWorld</RimWorldDir>
+    <HarmonyDir Condition="'$(HarmonyDir)' == ''">D:\SteamLibrary\steamapps\workshop\content\294100\2009463077\1.6\Assemblies</HarmonyDir>
+    <ManagedDir>$(RimWorldDir)\RimWorldWin64_Data\Managed</ManagedDir>
+    <FrameworkPathOverride>$(ManagedDir)</FrameworkPathOverride>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <GameReference Include="mscorlib;netstandard;System;System.Core;System.Runtime;System.Net.Http;Assembly-CSharp;UnityEngine;UnityEngine.CoreModule;UnityEngine.IMGUIModule;UnityEngine.TextRenderingModule" />
+    <Reference Include="@(GameReference)">
+      <HintPath>$(ManagedDir)\%(Identity).dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

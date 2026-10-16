@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimTaiName_LockTip>Locked: translation will not change this field</RimTaiName_LockTip>
+  <RimTaiName_Restore>Restore</RimTaiName_Restore>
+  <RimTaiName_Spike_WriteUnfocus>Test write (unfocus)</RimTaiName_Spike_WriteUnfocus>
+  <RimTaiName_Spike_WriteKeepFocus>Test write (keep focus)</RimTaiName_Spike_WriteKeepFocus>
+  <RimTaiName_Spike_HttpsTest>Test HTTPS connection</RimTaiName_Spike_HttpsTest>
+  <RimTaiName_Spike_HttpsStatus>HTTPS test: {0}</RimTaiName_Spike_HttpsStatus>
+</LanguageData>

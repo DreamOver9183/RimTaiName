@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <RimTaiName_LockTip>鎖定：翻譯時不變更此欄</RimTaiName_LockTip>
+  <RimTaiName_Restore>還原</RimTaiName_Restore>
+  <RimTaiName_Spike_WriteUnfocus>測試寫入（取消焦點）</RimTaiName_Spike_WriteUnfocus>
+  <RimTaiName_Spike_WriteKeepFocus>測試寫入（保留焦點）</RimTaiName_Spike_WriteKeepFocus>
+  <RimTaiName_Spike_HttpsTest>測試 HTTPS 連線</RimTaiName_Spike_HttpsTest>
+  <RimTaiName_Spike_HttpsStatus>HTTPS 連線測試：{0}</RimTaiName_Spike_HttpsStatus>
+</LanguageData>
