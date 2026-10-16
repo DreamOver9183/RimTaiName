@@ -58,6 +58,9 @@
   - 未來規劃（未排程）：自訂異種族與混血目前只送異種族名稱，之後可附上最多 10 個基因名稱
   - 與原計畫的差異：以 `Seed` 產生外文名開頭字母的提示，讓重複生成的結果不同（取樣參數已棄用）；未鎖定欄位的舊值不送出
 - [ ] Step 7：上架 Steam 創意工坊
+  - [x] 正式 `packageId` `DreamOver9183.RimTaiName`、名稱「邊緣臺名 RimTaiName」、`HarmonyId`、`Preview.png`、創意工坊說明（`Docs/Workshop_zhTW.txt`／`_en.txt`）、README（PR #20）
+  - [ ] 使用者在測試機上傳；`About/PublishedFileId.txt` 拷回專案並 commit；Steam 頁面貼上說明、設定可見度與必要項目（Harmony）
+  - 延後：1.7 unstable 實測（開發機與測試機都沒有 1.7），通過後才更新 `supportedVersions` 與 `LoadFolders.xml`
 
 ## Context
 

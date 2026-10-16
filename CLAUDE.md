@@ -83,6 +83,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
 | PR 自動審查 | `python -I Tools/agy_review.py <PR#> --post` |
 | 遊戲記錄 | 開發機 `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Player.log` |
+| 上架／更新創意工坊 | 打包後把 `dist/RimTaiName.zip` 解到測試機的 `Mods\RimTaiName`（一般資料夾）→ 開發模式 → Mod 清單選本 Mod → 「上傳到 Steam 創意工坊」。上傳後把 `About/PublishedFileId.txt` 拷回專案並 commit。頁面說明貼 `Docs/Workshop_*.txt`（BBCode） |
 
 ---
 
@@ -148,6 +149,12 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 ### RimWorld
 *   對 `Assembly-CSharp.dll` 做反射時，會碰到 Unity 的靜態建構子會丟例外；`ReflectionOnlyLoadFrom` 需要先載入相依組件。只看中繼資料即可。
 *   `BuildName()` 每次都 `new NameTriple`，所以用 `ReferenceEquals(pawn.Name, 開窗時的 Name)` 偵測「確定」。不要 patch `Pawn.Name` setter（可能被 inline；開局畫面每次按鍵都會重設名字）。
+*   **創意工坊上傳（1.6 `Verse.Steam.Workshop`）：**
+    *   `SetItemContent(RootDir)` 會上傳**整個 Mod 資料夾**，沒有任何排除。開發機的 `Mods\RimTaiName` 是指向整個專案的 junction，裡面有金鑰檔、`TestLog/`、原始碼，**絕不可從那裡上傳**，一律用 `dist/RimTaiName` 的乾淨副本。
+    *   標題每次上傳都從 `About.xml` 更新，說明只在第一次上傳時寫入；之後改說明要直接在 Steam 頁面編輯。
+    *   上傳選單只在開發模式下出現。
+    *   遊戲把 ID 寫進 `About/PublishedFileId.txt`，更新同一個項目要靠它，所以要放進版本控制。
+*   改了 `packageId` 之後，`ModsConfig.xml` 裡的舊 ID 對不上，Mod 會被停用，要在 Mod 清單重新啟用。Mod 設定檔名取決於資料夾名稱，不受 `packageId` 影響。
 *   開發模式**且**開啟上帝模式時（`DebugSettings.ShowDevGizmos` = `Prefs.DevMode && godMode`），任何小人的改名視窗都是新生兒版（三列可編輯、無頭銜、姓欄為「建議...」）；只開開發模式不會。
 *   姓欄「建議」清單為空時，`MakeRow` 不畫任何按鈕；鎖頭必須 `NewCol(24f, HorizontalJustification.Right)`。
 *   `CharacterCardUtility.ValidNameRegex` 擋 `·`、`・` 與 CJK 擴充 B 以後的字（代理對、長度算 2）。
