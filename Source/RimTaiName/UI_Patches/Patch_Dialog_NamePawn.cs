@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
+using RimTaiName.Core;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -40,7 +41,7 @@ namespace RimTaiName.UI_Patches
         }
     }
 
-    /// <summary>Draws a lock checkbox in the space left at the end of each first/nick/last row.</summary>
+    /// <summary>Draws a lock checkbox at the right end of each first/nick/last row.</summary>
     [HarmonyPatch]
     internal static class Patch_NameContext_MakeRow
     {
@@ -54,13 +55,14 @@ namespace RimTaiName.UI_Patches
                 int index = NamePawnAccess.NameIndex(__instance);
                 if (state == null || index < 0 || index > 2 || !NamePawnAccess.Editable(__instance))
                     return;
-                Rect cell = divider.NewCol(24f);
+                // Right-justified: a newborn's last-name row draws no button when no parent has a surname.
+                Rect cell = divider.NewCol(24f, HorizontalJustification.Right);
                 Widgets.Checkbox(new Vector2(cell.x, cell.y + (cell.height - 24f) / 2f), ref state.Locked[index]);
                 TooltipHandler.TipRegion(cell, "RimTaiName_LockTip".Translate());
             }
             catch (Exception e)
             {
-                Log.ErrorOnce($"[RimTaiName] lock column failed: {e}", 0x52544e01);
+                ModLog.ErrorOnce($"lock column failed: {e}", 0x52544e01);
             }
         }
     }
@@ -92,7 +94,7 @@ namespace RimTaiName.UI_Patches
                 new CodeMatch(OpCodes.Ldc_R4, 17.5f));
             if (matcher.IsInvalid)
             {
-                Log.Warning("[RimTaiName] toolbar injection point not found; toolbar disabled");
+                ModLog.Warning("toolbar injection point not found; toolbar disabled");
                 return original;
             }
             var loadAggregator = matcher.Instruction;
@@ -100,7 +102,7 @@ namespace RimTaiName.UI_Patches
                 new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(loadAggregator),
                 new CodeInstruction(loadAggregator.opcode, loadAggregator.operand),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ToolbarDrawer), nameof(ToolbarDrawer.Draw))));
-            Log.Message("[RimTaiName] toolbar row injected into Dialog_NamePawn.DoWindowContents");
+            ModLog.Message("toolbar row injected into Dialog_NamePawn.DoWindowContents");
             return matcher.InstructionEnumeration();
         }
 
@@ -147,7 +149,7 @@ namespace RimTaiName.UI_Patches
             }
             catch (Exception e)
             {
-                Log.ErrorOnce($"[RimTaiName] toolbar failed: {e}", 0x52544e02);
+                ModLog.ErrorOnce($"toolbar failed: {e}", 0x52544e02);
             }
         }
 

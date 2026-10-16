@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <GameReference Include="mscorlib;netstandard;System;System.Core;System.Runtime;System.Net.Http;Assembly-CSharp;UnityEngine;UnityEngine.CoreModule;UnityEngine.IMGUIModule;UnityEngine.TextRenderingModule" />
+    <GameReference Include="mscorlib;netstandard;System;System.Core;System.Runtime;System.Net.Http;System.Security;System.Xml;System.Xml.Linq;Assembly-CSharp;UnityEngine;UnityEngine.CoreModule;UnityEngine.IMGUIModule;UnityEngine.TextRenderingModule" />
     <Reference Include="@(GameReference)">
       <HintPath>$(ManagedDir)\%(Identity).dll</HintPath>
       <Private>false</Private>

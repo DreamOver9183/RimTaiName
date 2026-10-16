@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
+using RimTaiName.Core;
 using RimTaiName.Spike;
 using UnityEngine;
 using Verse;
@@ -14,6 +15,7 @@ namespace RimTaiName
 
         public RimTaiNameMod(ModContentPack content) : base(content)
         {
+            ApiKeyStore.Initialize(GenFilePaths.ConfigFolderPath);
             var harmony = new Harmony(HarmonyId);
             // Patch each class on its own so one failing patch never takes the others (or vanilla) down.
             foreach (var type in AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly()))
@@ -26,11 +28,11 @@ namespace RimTaiName
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"[RimTaiName] patch {type.Name} failed: {e}");
+                    ModLog.Error($"patch {type.Name} failed: {e}");
                 }
             }
-            Log.Message($"[RimTaiName] loaded: Harmony {typeof(Harmony).Assembly.GetName().Version}, " +
-                        $"{harmony.GetPatchedMethods().Count()} methods patched");
+            ModLog.Message($"loaded: Harmony {typeof(Harmony).Assembly.GetName().Version}, " +
+                           $"{harmony.GetPatchedMethods().Count()} methods patched, key storage {ApiKeyStore.Mode}");
             ConnectivityProbe.Start();
         }
 

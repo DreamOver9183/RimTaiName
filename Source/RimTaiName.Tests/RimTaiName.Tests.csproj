@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>RimTaiName.Tests</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- The pure C# layers are compiled into this assembly as linked files, so they are tested under
+       net10.0 while the mod itself builds them for the game's net472 Mono runtime. -->
+  <ItemGroup>
+    <Compile Include="..\RimTaiName\Pipeline\**\*.cs" Link="Linked\Pipeline\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\RimTaiName\Llm\**\*.cs" Link="Linked\Llm\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\RimTaiName\Core\KeyRedactor.cs" Link="Linked\Core\KeyRedactor.cs" />
+  </ItemGroup>
+
+  <!-- Runs on Microsoft.Testing.Platform (see /global.json): dotnet test - -project Source/RimTaiName.Tests -->
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+  </ItemGroup>
+
+</Project>
