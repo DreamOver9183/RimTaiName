@@ -47,9 +47,11 @@ Source/RimTaiName.Tests/   xUnit，net10.0，以連結方式編譯 Pipeline/**�
 *   **可讀取金鑰明文的程式只有三處：** `ApiKeyStore` 內部（含 `Redact`）、`GeminiInteractionsClient`（注入的 `Func<string>`，送出時才取用）、設定頁按「顯示」時。
 *   金鑰只放 `x-goog-api-key` 標頭，絕不放網址、記錄、例外訊息、Prompt、Mod 設定 XML。
 *   端點寫死 `https://generativelanguage.googleapis.com`；`AllowAutoRedirect = false`；不覆寫 TLS 驗證；模型代號必須符合 `^[a-z0-9]+(?:[.-][a-z0-9]+)*$`。
-*   金鑰樣式：舊式 `AIza[0-9A-Za-z_-]{35}`；2026-05 起 AI Studio 新金鑰 `AQ\.[0-9A-Za-z_.-]{20,}`（實測長度 53）。遮蔽格式為「前綴…末 4 碼」。
+*   金鑰樣式：舊式 `AIza[0-9A-Za-z_-]{35}`；2026-05 起 AI Studio 新金鑰 `AQ\.[0-9A-Za-z_.-]{20,}`（實測長度 53，打包掃描用這個寬鬆版）。`KeyRedactor` 的 `AQ.` 樣式要求結尾不是 `.`，以免吞掉句號。遮蔽格式為「前綴…末 4 碼」。
 *   Windows 用 DPAPI（`ProtectedData`，CurrentUser）存 `Config/RimTaiName_ApiKey.dat`；非 Windows 一律只在本次遊戲期間記憶。
 *   **開發用金鑰：** 專案根目錄的 `RimTaiName_KEY_01.txt`（gitignore 規則 `*_KEY_*.txt`）。只能由腳本或測試在程式內讀取，**絕不 `cat`／`Get-Content` 印出、不貼進對話、不寫入任何檔案或 PR**。檢查格式時只輸出布林值與長度。
+*   **金鑰驗證：** 只接受可列印 ASCII（`!`～`~`）、20～256 字，不檢查前綴（金鑰要放進 HTTP 標頭，且 Google 改過格式）。
+*   **測試中的假金鑰：** 一律在執行時串接組出（例如 `"AI" + "za" + new string('x', 31) + …`），原始碼裡不得出現符合金鑰樣式的字面值；本 repo 是 Public，GitHub secret scanning 會攔截或警示。
 
 ---
 
@@ -61,7 +63,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | :--- | :--- |
 | 建置（typecheck） | `dotnet build Source/RimTaiName/RimTaiName.csproj -c Release -warnaserror` |
 | C# lint | `dotnet format Source/RimTaiName/RimTaiName.csproj --verify-no-changes`（測試專案同理） |
-| 單元測試 | `dotnet test Source/RimTaiName.Tests` |
+| 單元測試 | `dotnet test --project Source/RimTaiName.Tests`（Microsoft.Testing.Platform，由根目錄 `global.json` 啟用） |
+| 即時 API 測試 | `$env:RIMTAINAME_KEY_FILE = (Resolve-Path RimTaiName_KEY_01.txt).Path; dotnet test --project Source/RimTaiName.Tests --filter-trait "Category=Live"`，跑完 `Remove-Item Env:RIMTAINAME_KEY_FILE`。每次用掉約 4 次請求額度；未設環境變數時這些測試自動略過 |
 | Python 語法檢查 | `python -I -m py_compile Tools/<file>.py`（沒有安裝 ruff／pyflakes） |
 | PowerShell 語法檢查 | `[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)`（沒有 PSScriptAnalyzer） |
 | 打包 | `powershell -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（Step 1 建立） |
@@ -74,7 +77,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 
 ## 開發流程 SOP（每完成一個獨立模組或可測試單元，依序執行，不可跳過）
 
-1.  **自我審查與測試：** 在功能分支（`feat/<短名>`、`fix/<短名>`）上執行 build（`-warnaserror`）、`dotnet format --verify-no-changes`、`dotnet test`，以及變更檔案的 Python／PowerShell 語法檢查；自己讀一次 diff 做初步 Code Review。
+1.  **自我審查與測試：** 在功能分支（`feat/<短名>`、`fix/<短名>`）上執行 build（`-warnaserror`）、`dotnet format --verify-no-changes`、`dotnet test --project Source/RimTaiName.Tests`，以及變更檔案的 Python／PowerShell 語法檢查；改到 `Llm/` 時加跑即時 API 測試；自己讀一次 diff 做初步 Code Review。
 2.  **發起 PR：** `git push -u origin <branch>`，`gh pr create --base main`。內文附變更摘要與測試結果，結尾加 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`。
 3.  **雙軌審核：**
     *   先請 Copilot 審查：`gh pr edit <PR#> --add-reviewer "@copilot"`，再以 `gh pr view <PR#> --json reviews,comments` 檢查是否完成。
@@ -96,6 +99,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **每個視窗的狀態：** `ConditionalWeakTable<Dialog_NamePawn, DialogState>`；`DialogStateRegistry.Drawing` 記錄目前正在繪製的視窗（IMGUI 單執行緒）。
 *   **寫入文字框：** 只在 `DoWindowContents` Prefix 且 `Event.current.type == EventType.Layout` 時寫入 `NameContext.current`，寫入前先 `UI.UnfocusCurrentTextField()`。
 *   **插入工具列：** Transpiler 以 `CodeMatcher` 找 `rectAggregator.NewRow(17.5f)`，在前面插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；找不到時只停用工具列。
+*   **設定檔類寫入：** 先寫 `<path>.tmp`，目標存在時 `File.Replace(temp, path, null)`、否則 `File.Move`，`finally` 刪除殘留的暫存檔。讀檔失敗時從空狀態開始，不讓 Mod 載入中斷。
+*   **可測試的 HTTP 用戶端：** 正式建構子建立 `HttpClientHandler { AllowAutoRedirect = false }`；`internal` 建構子注入 `HttpMessageHandler`、逾時與重試延遲，測試用假 handler（延遲要尊重 `CancellationToken`，否則 HttpClient 逾時測不到）。
 *   **字典產生：** Python 工具鏈 `extract_vanilla_names.py` → `build_full_input.py` → `agy_translate.py` → `merge_dictionary.py`；人工修正寫在 `NameTable/translations/` 的 CSV，不直接改 TSV。
 
 ---
@@ -117,6 +122,14 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   回應在 `steps[]`，要找 `type == "model_output"`（前面可能有 `thought`），且 `status == "completed"`。
 *   錯誤 `code` 是 snake_case **字串**；`models.get` 等舊 API 是數字 code ＋ `status`。429 分 `quota_exceeded`（每日）與 `rate_limit_exceeded`（每分鐘）。
 *   `temperature`／`top_p`／`top_k` 已棄用，未來模型會回 400；flash-lite 預設 `thinking_level = minimal`。
+
+### 測試與審查流程
+*   .NET 10 SDK 的 `dotnet test` 不再支援 VSTest：xunit.v3 必須搭配根目錄 `global.json` 的 `"test": {"runner": "Microsoft.Testing.Platform"}`，指令改為 `dotnet test --project <dir>`；測試專案不需要 `Microsoft.NET.Test.Sdk`、`xunit.runner.visualstudio`。
+*   xUnit 分析器 xUnit1051（測試專案設 `TreatWarningsAsErrors`）：呼叫接受 `CancellationToken` 的方法時要傳 `TestContext.Current.CancellationToken`。
+*   即時測試用 `Assert.SkipWhen`／`Assert.SkipUnless`（xunit.v3）在沒有金鑰時略過，並以 `[Trait("Category", "Live")]` 標記。
+*   本帳號 Copilot 審查額度已用完：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
+*   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
+*   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach <tmp> <branch>`），避免工作區中下一個單元的未追蹤檔案混入。
 
 ### 工具與環境
 *   `agy` 逾時時仍回傳 SUCCESS，但回應是空的；要檢查 `structured_output` 是否存在。
