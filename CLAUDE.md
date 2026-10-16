@@ -33,7 +33,7 @@ Source/RimTaiName/
 ├── Llm/         Gemini，純 C#：GeminiInteractionsClient（傳輸）、GeminiNameTranslator（ILlmClient）、PromptBuilder、
 │                RequestGate、MiniJson、ModelId、QuotaResetClock
 └── UI_Patches/  Harmony patch（Patch_Dialog_NamePawn）、反射存取（NamePawnAccess）、視窗狀態（DialogState）、
-                 翻譯／還原／學習流程（DialogTranslation）；遊戲型別
+                 翻譯／生成／還原／學習流程（DialogTranslation）、小人背景讀取（PawnContextReader）；遊戲型別
 Prompts/NameRules_zhTW.txt  翻譯規則（C# 與 Python 共用）
 Source/RimTaiName.Tests/   xUnit，net10.0，以連結方式編譯 Pipeline/**、Llm/**、Core/KeyRedactor.cs、Core/UiJob.cs
 ```
@@ -112,6 +112,16 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **晚到的結果：** 請求開始時記下每欄「本機寫入後」的內容；結果只寫入未鎖定、且內容仍相同的欄位。「還原」會讓之後到的結果作廢，只進快取。視窗關閉後請求照常跑完（不 `Reset`），結果寫進記憶體快取，下次開窗時存檔。
 *   **等待中暫停點外關閉：** 送出請求時把 `closeOnClickedOutside` 存起來並設為 false。之後在 Layout 事件看到 `Job.Running` 變成 false 就恢復，不依賴有沒有結果（`onError` 也失敗時，`Job` 不會有結果）。
 *   **偵測「確定」：** 在 `DoWindowContents` Postfix 檢查 `!ReferenceEquals(pawn.Name, OriginalName) && !dialog.IsOpen`，並以旗標確保只學習一次。學習時讀 `NameTriple`；暱稱要用 `NickSet ? Nick : ""`，因為 `Nick` 未設定時會回傳名或姓。
+*   **翻譯與生成共用一條流程：** `NameRequestPayload.Mode` 決定起點。翻譯從 `ResolveLocal` 開始，生成從 `PlanGeneration` 開始：生成時未鎖定的欄位全部待生成，不查特殊字形、快取與字典。兩者之後都經 `ResolveRemoteAsync` 與 `NameDialogSession`。用錯模式會丟 `ArgumentException`。`PromptBuilder.BuildBody` 依模式選擇提示，兩套提示共用規則檔的 1～5 條與【範例】。
+*   **生成結果：**
+    *   來源標為 `FieldSource.Generated`。
+    *   經 `NameSanitizer` 時傳入的原文是 null，所以不允許任何拉丁字母。
+    *   不寫入快取，也不算玩家修正，因為沒有英文原文可以當鍵。
+*   **送給 Gemini 的小人資料只有 `PawnContext`：** 性別、背景故事、文化、異種族、年齡層。
+    *   每項最多 64 字，截斷時不切斷代理對。
+    *   未鎖定欄位的舊值不送出。
+    *   新增欄位前要先更新 v3 §7.4 與設定頁的隱私說明。
+*   **讓生成結果有變化：** 取樣參數已棄用，所以改用 `Seed` 產生外文名開頭字母的提示。`Seed` 用 `System.Random`，不用 `Verse.Rand`：UI 呼叫會改變遊戲的隨機序列。
 *   **玩家看到的欄位清單：** `GenText.ToCommaList(useAnd: true)` 會使用語言檔的 `ToCommaListAnd`，例如「名和姓」，不要自己用頓號串接。
 *   **寫入文字框：** 只在 `DoWindowContents` Prefix 且 `Event.current.type == EventType.Layout` 時寫入 `NameContext.current`，寫入前先 `UI.UnfocusCurrentTextField()`。
 *   **插入工具列：** Transpiler 以 `CodeMatcher` 找 `rectAggregator.NewRow(17.5f)`，在前面插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；找不到時只停用工具列。
@@ -195,6 +205,12 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   `NameSanitizer.Check` 只對應 Python 的三種「不合格」；`Sanitize` 是寫入前的清理（去標點符號、檢查遊戲 regex），所有來源的譯名都要經過它。
 *   .NET 正規表示式的 `$` 會匹配結尾換行之前的位置，要求整串時用 `\z`。
 *   `string.Normalize` 遇到孤立代理字元會丟 `ArgumentException`；一律經 `TextNormalization.Normalize`。
+
+*   **小人背景的 API（1.6）：**
+    *   `pawn.genes.Xenotype` 未設定時會回傳 Baseliner；自訂異種族要看 `UniqueXenotype` 與 `xenotypeName`。
+    *   `pawn.Ideo` 在沒有意識形態時是 null。
+    *   兒童的 `story.Adulthood` 是 null。
+    *   `pawn.DevelopmentalStage` 是旗標列舉。
 
 ### C#／Mono 相容
 *   字串解析器在呼叫 `string.CompareOrdinal(a, i, b, j, len)` 前先檢查剩餘長度：.NET 10 會自動截短比較，Mono 可能直接丟 `ArgumentOutOfRangeException`，測試抓不到差異。

@@ -52,6 +52,10 @@
   - [x] Prompt【範例】新增 9 個字典內的例子
   - 與原計畫的差異：`review_accepted.csv` 多記 `value`，譯名變動時會重新進入校對佇列；只帶提示性標記的人工修正也視為定案；修正官方譯名一律寫進 `review_corrections.csv`
 - [ ] Step 6：第二階段（生成中文名）
+  - [x] 生成管線與 Prompt（純 C#）：`PawnContext`、`PlanGeneration`、`FieldSource.Generated`（不寫快取、不學習）、`PromptBuilder.GenerateInstruction`；即時測試實際生成通過（PR #18）
+  - [x] 命名視窗：`PawnContextReader`、「生成中文名」按鈕、依模式區分的訊息與記錄（PR #19）
+  - [ ] 遊戲內驗證：男女、不同背景／文化／異種族各生成數次；鎖定欄位不變；兒童、沒有意識形態的小人不出錯
+  - 與原計畫的差異：以 `Seed` 產生外文名開頭字母的提示，讓重複生成的結果不同（取樣參數已棄用）；未鎖定欄位的舊值不送出
 - [ ] Step 7：上架 Steam 創意工坊
 
 ## Context
