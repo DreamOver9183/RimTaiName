@@ -4,7 +4,9 @@ using RimTaiName.Pipeline;
 
 namespace RimTaiName.Llm
 {
-    /// <summary>Translates the fields the local pipeline could not resolve. Implemented in Step 3.</summary>
+    /// <summary>
+    /// Translates the fields the local pipeline could not resolve, or (Generate mode) creates new names for them.
+    /// </summary>
     public interface ILlmClient
     {
         /// <summary>
@@ -14,9 +16,14 @@ namespace RimTaiName.Llm
         Task<LlmResponse> TranslateAsync(LlmRequest request, CancellationToken cancellationToken);
     }
 
-    /// <summary>All three fields go along as context; only the <see cref="Wanted"/> ones are to be translated.</summary>
+    /// <summary>
+    /// Translate: all three fields go along as context; only the <see cref="Wanted"/> ones are translated.
+    /// Generate: the wanted fields get new names; locked fields are sent as a style reference.
+    /// </summary>
     public sealed class LlmRequest
     {
+        public ProcessMode Mode { get; set; } = ProcessMode.Translate;
+
         public string[] Text { get; } = new string[NameFields.Count];
 
         public bool[] Wanted { get; } = new bool[NameFields.Count];
@@ -24,6 +31,12 @@ namespace RimTaiName.Llm
         public bool[] Locked { get; } = new bool[NameFields.Count];
 
         public NickSource NickSource { get; set; }
+
+        /// <summary>Generate mode only.</summary>
+        public PawnContext Context { get; set; }
+
+        /// <summary>Generate mode only: picks the initial-letter hints.</summary>
+        public int Seed { get; set; }
     }
 
     public sealed class LlmResponse

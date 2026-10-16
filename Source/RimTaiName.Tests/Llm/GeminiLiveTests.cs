@@ -122,6 +122,46 @@ namespace RimTaiName.Tests.Llm
         }
 
         [Fact]
+        public async Task GeneratesNamesForAPawn()
+        {
+            string key = ReadKey();
+            string dir = Path.Combine(Path.GetTempPath(), "rimtainame_live_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                var cache = new PersonalNameCache(Path.Combine(dir, "cache.xml"));
+                cache.Load();
+                var dictionary = new BuiltInDictionary(Path.Combine(AppContext.BaseDirectory, "Data", "BaseNames_zhTW.tsv"));
+                var service = new NameProcessorService(dictionary, cache);
+                var prompts = new PromptBuilder(PromptBuilder.LoadRules(Path.Combine(AppContext.BaseDirectory, "Data", PromptBuilder.RulesFileName), out _));
+                var translator = new GeminiNameTranslator(new GeminiInteractionsClient(() => key), prompts, () => Model);
+
+                var payload = new NameRequestPayload("Gisele", "", "米勒")
+                {
+                    Mode = ProcessMode.Generate,
+                    Context = new PawnContext { Gender = "female", Childhood = "Vatgrown soldier", Culture = "Astropolitan", Xenotype = "Baseliner", LifeStage = "adult" },
+                    Seed = 7,
+                };
+                payload.Locked[(int)NameField.Last] = true;
+                NameResult result = await service.ResolveRemoteAsync(payload, service.PlanGeneration(payload), translator, Ct);
+
+                Assert.True(result.RemoteDetail == null || !result.RemoteDetail.Contains(key), "key leaked into RemoteDetail");
+                Assert.Equal(GeminiErrorKind.None, result.RemoteError);
+                foreach (NameField field in new[] { NameField.First, NameField.Nick })
+                {
+                    Assert.Equal(FieldSource.Generated, result[field].Source);
+                    Assert.True(NameSanitizer.ContainsChinese(result[field].Value), result[field].Value);
+                }
+                Assert.Equal(FieldSource.Unchanged, result[NameField.Last].Source);
+                Assert.Equal(0, cache.Count);
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
         public async Task WrongKeyIsReportedAsInvalidKey()
         {
             ReadKey();

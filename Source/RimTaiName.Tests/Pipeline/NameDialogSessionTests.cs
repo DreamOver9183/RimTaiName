@@ -318,6 +318,26 @@ namespace RimTaiName.Tests.Pipeline
         }
 
         [Fact]
+        public void GeneratedNamesAreWrittenButNeverLearned()
+        {
+            NameDialogSession session = Session();
+            string[] fields = { "Gisele", "Fox", "Miller" };
+            NameRequestPayload payload = session.CreatePayload(fields, AllEditable, true, ProcessMode.Generate);
+            Assert.Equal(ProcessMode.Generate, payload.Mode);
+
+            session.BeginTranslation(Result(Pending("Gisele"), Pending("Fox"), Pending("Miller")), fields, awaitRemote: true);
+            FieldWrite[] writes = session.CompleteTranslation(Result(Field(FieldSource.Generated, "凱倫", "Gisele"),
+                                                                     Field(FieldSource.Generated, "老狐狸", "Fox"),
+                                                                     Field(FieldSource.Generated, "史東", "Miller")), fields);
+            Assert.Equal(new[] { "凱倫", "老狐狸", "史東" }, Values(writes));
+            Assert.All(writes, w => Assert.False(w.Learnable));
+            Apply(session, writes, fields);
+
+            fields[0] = "凱蘭";
+            Assert.Empty(session.Corrections(fields)); // there is no English name to key a correction by
+        }
+
+        [Fact]
         public void WriteWithoutSourceTextIsNotLearnable()
         {
             Assert.False(new FieldWrite("吉賽兒", "  ", learnable: true).Learnable);

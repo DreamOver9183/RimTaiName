@@ -28,7 +28,7 @@ namespace RimTaiName.Pipeline
             if (payload == null)
                 throw new ArgumentNullException(nameof(payload));
             if (payload.Mode != ProcessMode.Translate)
-                throw new NotSupportedException("Only ProcessMode.Translate is implemented (Generate arrives in Step 6).");
+                throw new ArgumentException("ResolveLocal is for ProcessMode.Translate; use PlanGeneration.", nameof(payload));
             FieldResult first = ResolveField(payload, NameField.First);
             FieldResult last = ResolveField(payload, NameField.Last);
             FieldResult nick = ResolveNick(payload, first, last);
@@ -36,8 +36,25 @@ namespace RimTaiName.Pipeline
         }
 
         /// <summary>
-        /// Translates the pending fields of <paramref name="local"/> with one call. Successful, sanitized results
-        /// are added to the personal cache (origin api); locked and already resolved fields are never touched.
+        /// Generate mode: nothing is resolved locally (no special forms, cache or dictionary); every unlocked field
+        /// is pending and goes to <see cref="ResolveRemoteAsync"/>.
+        /// </summary>
+        public NameResult PlanGeneration(NameRequestPayload payload)
+        {
+            if (payload == null)
+                throw new ArgumentNullException(nameof(payload));
+            if (payload.Mode != ProcessMode.Generate)
+                throw new ArgumentException("PlanGeneration is for ProcessMode.Generate.", nameof(payload));
+            FieldResult Plan(NameField field) => payload.Locked[(int)field]
+                ? Unchanged(payload, field)
+                : new FieldResult(FieldSource.Pending, null, payload[field]?.Trim());
+            return new NameResult(Plan(NameField.First), Plan(NameField.Nick), Plan(NameField.Last));
+        }
+
+        /// <summary>
+        /// Sends the pending fields of <paramref name="local"/> in one call. Translations that pass the sanitizer are
+        /// added to the personal cache (origin api); generated names are not, since there is no source text to key
+        /// them by. Locked and already resolved fields are never touched.
         /// </summary>
         public async Task<NameResult> ResolveRemoteAsync(NameRequestPayload payload, NameResult local, ILlmClient client,
                                                          CancellationToken cancellationToken = default(CancellationToken))
@@ -54,9 +71,12 @@ namespace RimTaiName.Pipeline
             NameField? aliasOf = local[NameField.Nick].AliasOf;
             var request = new LlmRequest
             {
+                Mode = payload.Mode,
                 NickSource = aliasOf == NameField.First ? NickSource.AliasOfFirst
                     : aliasOf == NameField.Last ? NickSource.AliasOfLast
                     : NickSource.Explicit,
+                Context = payload.Context,
+                Seed = payload.Seed,
             };
             bool anyWanted = false;
             foreach (NameField field in NameFields.All)
@@ -115,9 +135,13 @@ namespace RimTaiName.Pipeline
             if (!response.Success)
                 return new FieldResult(FieldSource.Failed, null, before.SourceText, error: response.Error);
             NameSpace ns = NameFields.SpaceOf(field);
-            string sanitized = NameSanitizer.Sanitize(payload[field], response[field], ns);
+            bool generate = payload.Mode == ProcessMode.Generate;
+            // A generated name has no source text, so no Latin capital can be justified by it.
+            string sanitized = NameSanitizer.Sanitize(generate ? null : payload[field], response[field], ns);
             if (sanitized == null)
                 return new FieldResult(FieldSource.Failed, null, before.SourceText, error: GeminiErrorKind.InvalidResponse);
+            if (generate)
+                return new FieldResult(FieldSource.Generated, sanitized, before.SourceText);
             cache.Put(ns, NameKey.Normalize(payload[field]), sanitized, CacheOrigin.Api);
             return new FieldResult(FieldSource.Api, sanitized, before.SourceText);
         }

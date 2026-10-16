@@ -144,12 +144,80 @@ namespace RimTaiName.Tests.Pipeline
             AssertField(service.ResolveLocal(Payload("Gisele", "", "Miller")), NameField.Last, FieldSource.Dictionary, "米勒");
         }
 
-        [Fact]
-        public void GenerateModeIsNotImplementedYet()
+        // ---- generation (phase 2) ----
+
+        private static NameRequestPayload GeneratePayload(string first, string nick, string last, params NameField[] locked)
         {
-            NameRequestPayload payload = Payload("Gisele", "", "Miller");
-            payload.Mode = ProcessMode.Generate;
-            Assert.Throws<NotSupportedException>(() => service.ResolveLocal(payload));
+            var payload = new NameRequestPayload(first, nick, last)
+            {
+                Mode = ProcessMode.Generate,
+                Context = new PawnContext { Gender = "male", Culture = "Rustican" },
+                Seed = 42,
+            };
+            foreach (NameField field in locked)
+                payload.Locked[(int)field] = true;
+            return payload;
+        }
+
+        [Fact]
+        public void EachModeHasItsOwnEntryPoint()
+        {
+            Assert.Throws<ArgumentException>(() => service.ResolveLocal(GeneratePayload("Gisele", "", "Miller")));
+            Assert.Throws<ArgumentException>(() => service.PlanGeneration(Payload("Gisele", "", "Miller")));
+        }
+
+        [Fact]
+        public void GenerationSkipsTheDictionaryAndKeepsLockedFields()
+        {
+            NameResult plan = service.PlanGeneration(GeneratePayload("Gisele", "Fox", "Miller", NameField.Last));
+            AssertField(plan, NameField.First, FieldSource.Pending, null); // in the dictionary, still generated
+            AssertField(plan, NameField.Nick, FieldSource.Pending, null);
+            AssertField(plan, NameField.Last, FieldSource.Unchanged, null);
+            Assert.All(plan.Fields, f => Assert.False(f.AliasOf.HasValue));
+        }
+
+        [Fact]
+        public async Task GeneratedNamesAreSanitizedAndNeverCached()
+        {
+            var client = new FakeClient(LlmResponse.Ok("凱倫", "老狐狸", "米勒"));
+            NameRequestPayload payload = GeneratePayload("Gisele", "Fox", "米勒", NameField.Last);
+            NameResult result = await service.ResolveRemoteAsync(payload, service.PlanGeneration(payload), client, Ct);
+
+            LlmRequest request = Assert.Single(client.Requests);
+            Assert.Equal(ProcessMode.Generate, request.Mode);
+            Assert.Same(payload.Context, request.Context);
+            Assert.Equal(42, request.Seed);
+            Assert.Equal(new[] { true, true, false }, request.Wanted);
+            Assert.Equal(new[] { false, false, true }, request.Locked);
+
+            AssertField(result, NameField.First, FieldSource.Generated, "凱倫");
+            AssertField(result, NameField.Nick, FieldSource.Generated, "老狐狸");
+            AssertField(result, NameField.Last, FieldSource.Unchanged, null);
+            Assert.Equal(0, cache.Count);
+        }
+
+        [Theory]
+        [InlineData("G凱倫")]   // no source text, so no Latin capital is allowed
+        [InlineData("")]
+        [InlineData(null)]
+        public async Task UnusableGeneratedNameFails(string value)
+        {
+            var client = new FakeClient(LlmResponse.Ok(value, null, null));
+            NameRequestPayload payload = GeneratePayload("Gisele", "Fox", "Miller", NameField.Nick, NameField.Last);
+            NameResult result = await service.ResolveRemoteAsync(payload, service.PlanGeneration(payload), client, Ct);
+            AssertField(result, NameField.First, FieldSource.Failed, null);
+            Assert.Equal(GeminiErrorKind.InvalidResponse, result[NameField.First].Error);
+        }
+
+        [Fact]
+        public async Task EverythingLockedMeansNoGenerationRequest()
+        {
+            var client = new FakeClient(LlmResponse.Ok("x", "y", "z"));
+            NameRequestPayload payload = GeneratePayload("吉賽兒", "", "米勒", NameField.First, NameField.Nick, NameField.Last);
+            NameResult plan = service.PlanGeneration(payload);
+            Assert.False(plan.HasPending);
+            Assert.Same(plan, await service.ResolveRemoteAsync(payload, plan, client, Ct));
+            Assert.Empty(client.Requests);
         }
 
         // ---- nickname aliases (v3 §6.3) ----

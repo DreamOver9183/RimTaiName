@@ -29,7 +29,7 @@ namespace RimTaiName.Pipeline
     {
         Translate,
 
-        /// <summary>Phase 2 (Step 6); not handled by the pipeline yet.</summary>
+        /// <summary>Phase 2: new Chinese names for the unlocked fields, from the pawn's <see cref="PawnContext"/>.</summary>
         Generate,
     }
 
@@ -43,6 +43,9 @@ namespace RimTaiName.Pipeline
         PersonalCache,
         Dictionary,
         Api,
+
+        /// <summary>A new name from Gemini (Generate mode): never cached, never learned from.</summary>
+        Generated,
         Failed,
 
         /// <summary>Needs Gemini (or, for an alias, the field it mirrors still needs Gemini).</summary>
@@ -83,6 +86,12 @@ namespace RimTaiName.Pipeline
 
         /// <summary>Setting "keep vanilla form of address": fill a blank alias nickname with the translation.</summary>
         public bool KeepVanillaAddress { get; set; } = true;
+
+        /// <summary>Generate mode: the pawn's background.</summary>
+        public PawnContext Context { get; set; }
+
+        /// <summary>Generate mode: varies the hints in the prompt so repeated requests give different names.</summary>
+        public int Seed { get; set; }
 
         public string this[NameField field] => Text[(int)field];
     }

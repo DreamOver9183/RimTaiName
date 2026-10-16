@@ -157,5 +157,109 @@ namespace RimTaiName.Tests.Llm
             var properties = MiniJson.AsObject(schema["properties"]);
             Assert.All(new[] { "first", "nick", "last" }, p => Assert.Equal("string", MiniJson.AsObject(properties[p])["type"]));
         }
+
+        // ---- generation (phase 2) ----
+
+        private static LlmRequest GenerateRequest(string first, string nick, string last, params NameField[] wanted)
+        {
+            LlmRequest request = Request(first, nick, last, wanted);
+            request.Mode = ProcessMode.Generate;
+            foreach (NameField field in NameFields.All)
+                request.Locked[(int)field] = !request.Wanted[(int)field];
+            request.Context = new PawnContext
+            {
+                Gender = "female",
+                Childhood = "Vatgrown soldier",
+                Adulthood = "",
+                Culture = "Astropolitan",
+                Xenotype = "Baseliner",
+                LifeStage = "adult",
+            };
+            return request;
+        }
+
+        private static Dictionary<string, object> Parse(string input) => MiniJson.AsObject(MiniJson.Parse(input));
+
+        [Fact]
+        public void GenerateInstructionOrderIsIntroInputStepsRulesOutputRuleExamples()
+        {
+            string instruction = new PromptBuilder(ShippedRules).GenerateInstruction;
+            int input = instruction.IndexOf("【輸入欄位】", StringComparison.Ordinal);
+            int steps = instruction.IndexOf("【取名方式】", StringComparison.Ordinal);
+            int rules = instruction.IndexOf("【規則】", StringComparison.Ordinal);
+            int rule6 = instruction.IndexOf("\n6. 只填 generate", StringComparison.Ordinal);
+            int examples = instruction.IndexOf("【範例】", StringComparison.Ordinal);
+            Assert.True(0 < input && input < steps && steps < rules && rules < rule6 && rule6 < examples,
+                        $"positions {input} {steps} {rules} {rule6} {examples}");
+            Assert.DoesNotContain("只翻譯 items", instruction);
+            Assert.DoesNotContain("\n\n\n", instruction);
+        }
+
+        [Fact]
+        public void GenerateInputHasContextLockedFieldsAndTargets()
+        {
+            LlmRequest request = GenerateRequest("Zzyzx", "Doc", "米勒", NameField.First, NameField.Nick);
+            Dictionary<string, object> input = Parse(PromptBuilder.BuildGenerateInput(request));
+
+            var pawn = MiniJson.AsObject(input["pawn"]);
+            Assert.Equal("female", pawn["gender"]);
+            Assert.Equal("Vatgrown soldier", pawn["childhood"]);
+            Assert.False(pawn.ContainsKey("adulthood")); // empty values are left out
+            Assert.Equal("Astropolitan", pawn["culture"]);
+            Assert.Equal("Baseliner", pawn["xenotype"]);
+            Assert.Equal("adult", pawn["life_stage"]);
+            Assert.Equal(new object[] { "first", "nick" }, MiniJson.AsArray(input["generate"]));
+
+            var locked = MiniJson.AsObject(input["locked"]);
+            Assert.Equal("米勒", Assert.Single(locked).Value);
+            Assert.DoesNotContain("Zzyzx", PromptBuilder.BuildGenerateInput(request)); // about to be replaced: not sent
+        }
+
+        [Theory]
+        [InlineData(0, "A", "A")]
+        [InlineData(1, "B", "A")]
+        [InlineData(22, "B", "B")]
+        [InlineData(-1, "D", "T")] // as uint 4294967295: % 21 = 3, / 21 % 21 = 18
+        public void HintsFollowTheSeed(int seed, string firstInitial, string lastInitial)
+        {
+            LlmRequest request = GenerateRequest("", "", "", NameField.First, NameField.Last);
+            request.Seed = seed;
+            var hints = MiniJson.AsObject(Parse(PromptBuilder.BuildGenerateInput(request))["hints"]);
+            Assert.Equal(firstInitial, hints["first_initial"]);
+            Assert.Equal(lastInitial, hints["last_initial"]);
+        }
+
+        [Fact]
+        public void NoHintsWhenOnlyTheNicknameIsGenerated()
+        {
+            Dictionary<string, object> input = Parse(PromptBuilder.BuildGenerateInput(GenerateRequest("吉賽兒", "", "米勒", NameField.Nick)));
+            Assert.False(input.ContainsKey("hints"));
+        }
+
+        [Fact]
+        public void MissingContextAndLongValuesAreHandled()
+        {
+            LlmRequest request = GenerateRequest("", "", "", NameField.First);
+            request.Context = null;
+            Assert.Empty(MiniJson.AsObject(Parse(PromptBuilder.BuildGenerateInput(request))["pawn"]));
+
+            string emoji = char.ConvertFromUtf32(0x1F437); // two UTF-16 units
+            request.Context = new PawnContext { Xenotype = new string('x', 63) + emoji + "tail" };
+            string xenotype = (string)MiniJson.AsObject(Parse(PromptBuilder.BuildGenerateInput(request))["pawn"])["xenotype"];
+            Assert.Equal(new string('x', 63), xenotype); // cut before the pair, not through it
+        }
+
+        [Fact]
+        public void BodyFollowsTheRequestMode()
+        {
+            var builder = new PromptBuilder(ShippedRules);
+            Dictionary<string, object> generate = builder.BuildBody(GenerateRequest("", "", "", NameField.First));
+            Assert.Equal(builder.GenerateInstruction, generate["system_instruction"]);
+            Assert.Contains("\"generate\"", (string)generate["input"]);
+
+            Dictionary<string, object> translate = builder.BuildBody(Request("Zzyzx", "", "", NameField.First));
+            Assert.Equal(builder.SystemInstruction, translate["system_instruction"]);
+            Assert.Throws<ArgumentNullException>(() => builder.BuildBody(null));
+        }
     }
 }
