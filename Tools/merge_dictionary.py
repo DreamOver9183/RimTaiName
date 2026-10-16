@@ -3,7 +3,9 @@
 Priority: review_corrections.csv > official_overrides.csv (empty value = use Gemini) > official > Gemini.
 Then nicknames that are only a spelling variant of a tier 1-2 given name are aligned to that name.
 Writes NameTable/translations/dictionary_draft.csv, review_queue.csv, nick_collisions.csv and
-Dictionary/BaseNames_zhTW.tsv, and prints statistics.
+Dictionary/BaseNames_zhTW.tsv, and prints statistics. review_queue.csv leaves out rows whose current
+translation is listed in review_accepted.csv (checked and kept; see Tools/review_sheet.py), and manual
+corrections that carry only informational flags.
 """
 import collections
 import csv
@@ -12,7 +14,7 @@ import sys
 import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from name_rules import check, special_form  # noqa: E402
+from name_rules import check, entry_key, read_rows, special_form  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TR = os.path.join(ROOT, 'NameTable', 'translations')
@@ -22,11 +24,15 @@ BLACKLIST = {'貞子': {'sadako'}}
 # Name-like nicknames whose meaning translation was wrong; always align them to the given-name translation.
 FORCE_ALIGN = {'yu', 'hiroshi', 'nobu', 'yoshi', 'ho', 'chang', 'levi', 'boyle', 'waldo', 'chase',
                'lander', 'bender'}
+# Flags that only ask for a second look (not rule violations); a manual correction settles them.
+INFO_FLAGS = {'單字名', '名姓偏長', '者字尾'}
 
 
 def load_fixes(name):
     path = os.path.join(TR, name)
-    return {(o['namespace'], o['text'].lower()): o for o in csv.DictReader(open(path, encoding='utf-8-sig'))}
+    if not os.path.exists(path):
+        return {}
+    return {entry_key(o['namespace'], o['text']): o for o in read_rows(path)}
 
 
 def align_nicknames(out):
@@ -51,11 +57,12 @@ def main():
     rows = list(csv.DictReader(open(os.path.join(TR, 'full_results.csv'), encoding='utf-8-sig')))
     overrides = load_fixes('official_overrides.csv')
     corrections = load_fixes('review_corrections.csv')
+    accepted = load_fixes('review_accepted.csv')
     out = []
     for r in rows:
         gem = r['gemini_zh'].strip()
         offs = [o for o in r['zh_tw_official'].split(' / ') if o]
-        k = (r['namespace'], r['text'].lower())
+        k = entry_key(r['namespace'], r['text'])
         ov = overrides.get(k)
         special = special_form(r['text'], r['namespace'])
         if k in corrections:
@@ -93,9 +100,15 @@ def main():
             by_zh[o['final_zh']].append(o['text'])
     collisions = {z: t for z, t in by_zh.items() if len(t) > 1}
 
+    def settled(o):
+        if o['source'] == 'correction' and all(f in INFO_FLAGS for f in o['flags']):
+            return True  # a person chose this value; only hard errors still need a look
+        a = accepted.get(entry_key(o['namespace'], o['text']))
+        return a is not None and a['value'] == o['final_zh']  # a changed translation needs another look
+
+    queue = [o for o in out if o['flags'] and not settled(o)]
     fields = list(out[0].keys())
-    for name, subset in (('dictionary_draft.csv', out),
-                         ('review_queue.csv', [o for o in out if o['flags']])):
+    for name, subset in (('dictionary_draft.csv', out), ('review_queue.csv', queue)):
         with open(os.path.join(TR, name), 'w', encoding='utf-8-sig', newline='') as f:
             w = csv.DictWriter(f, fieldnames=fields)
             w.writeheader()
@@ -121,6 +134,8 @@ def main():
     print('flags:', dict(flag_kinds))
     print('flagged rows:', sum(1 for o in out if o['flags']),
           'by tier:', dict(collections.Counter(o['tier'] for o in out if o['flags'])))
+    print('review queue (flagged, not accepted):', len(queue), 'by tier:', dict(collections.Counter(o['tier'] for o in queue)),
+          '| accepted entries:', len(accepted), 'settled rows:', sum(1 for o in out if settled(o)))
     print('nick collision groups (informational):', len(collisions))
     diff = [o for o in out if o['official'] and o['gemini_zh'] and o['gemini_zh'] not in o['official'].split(' / ')]
     print('official vs gemini differ:', len(diff), 'of', sum(1 for o in out if o['official']))

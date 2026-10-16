@@ -6,6 +6,7 @@
 麥克,6,Mac;Mike;Mack;Mic;Mc;Myke
 艾莉,6,Ally;Ellie;Ari;Allie;Aly;Elly
 大塊頭,6,Big;Hoss;Hefty;Bulk;Heavy;Oversize
+飛毛腿,5,Speedy;Dash;Legs;Swift;Outrun
 小不點,5,Squirt;Tiny;Bitty;Chibi;Tots
 傑斯,5,Jess;Jace;Jase;Jayce;Jeyce
 雷伊,5,Rhae;Ray;Rei;Rey;Ri
@@ -20,7 +21,6 @@
 老爹,5,Papa;Dad;Daddy;Daddio;Daddy-O
 琳恩,5,Lyn;Linn;Lynn;Lynnn;Rynn
 怪胎,5,Freak;Kreep;Oddball;Weird;Weirdo
-飛毛腿,4,Speedy;Dash;Legs;Swift
 克里斯,4,Chris;Kris;Cris;Khris
 奈特,4,Nate;Nat;Nater;Nait
 柴克,4,Zach;Zack;Zak;Zac
@@ -58,18 +58,17 @@
 獨行俠,3,Maverick;Loner;Solo
 硬漢,3,Nails;Bikkel;Rugged
 臭鼬,3,Smelly;Skunk;Stink
-塞拉,3,Cella;Cela;Sera
 書呆子,3,Dweeb;Bookworm;Nerd
 皮特,3,Pete;Piet;Pitt
 瓦爾,3,Val;Vair;Var
 法蘭基,3,Frankie;Franki;Franqui
+死神,3,Grim;Reaper;Kostucha
 馬丁,3,Martin;Maddin;Mart
 炸彈,3,Bomba;Bomb;Bombe
 技師,3,Engie;Tech;Engi
 珍妮,3,Jenni;Genny;Jenny
 卡茲,3,Kazz;Caz;Khaz
 蘇格蘭人,3,Scottish;Scotsman;Scots
-瓦斯,3,Vas;Vass;Was
 喬伊,3,Joey;Jo;Joi
 丹尼,3,Danny;Denny;Deni
 火花,3,Sparky;Spark;Sparkie
@@ -100,7 +99,7 @@
 原罪,3,Sin;Sins;Syn
 伯尼,3,Bernie;Berni;Berny
 貝托,3,Beto;Berto;Bettoh
-劊子手,3,Butcher;Executioner;Hangman
+奶油,3,Butters;Cream;Buttery
 船長,3,Cap'n;Capn';Skipper
 卡特,3,Carter;Katt;Katte
 小雞,3,Chicken;Chooky;Piyo
@@ -133,7 +132,6 @@
 喬尼,3,Jonee;Joni;Jony
 基爾,3,Kiel;Kior;Kir
 無賴,3,Knave;Malandras;Rogues
-粉碎者,3,Kudakeru;Crush;Smasher
 莉亞,3,Leia;Rhea;Rya
 莉茲,3,Liz;Lizz;Lizzy
 麥基,3,Maiki;McGee;Mikee
@@ -150,8 +148,8 @@
 膽小鬼,2,Sissy;Pansy
 樂天派,2,Happy;Jovial
 大鼻子,2,Nose;Snoot
-機靈鬼,2,Smarty;Maskinnen
 惡臭,2,Stench;Pong
+塞拉,2,Cella;Cela
 眼鏡仔,2,Glasses;Brille
 混蛋,2,Jerk;Bastard
 麥特,2,Matt;Mat
@@ -159,6 +157,7 @@
 安迪,2,Andy;Andi
 菲爾,2,Phil;Phill
 狐狸,2,Fox;Fawx
+東尼,2,Tony;Toni
 老大,2,Boss;Jefe
 暗影,2,Shadow;Shadows
 雷霆,2,Thunder;Grom
@@ -167,21 +166,18 @@
 男爵,2,Baron;LeBaron
 法國佬,2,Frenchy;Frenchie
 獵手,2,Huntsman;Hanta
-盧米,2,Lumi;Loomy
 山貓,2,Lynx;Ocelot
 牧羊人,2,Shepherd;Shepard
 薇琪,2,Vicky;Vikky
 道格,2,Doug;Dewg
-悲傷,2,Grief;Sorrow
 鼴鼠,2,Mole;Moley
 崔夫,2,Trev;Trav
 扳機,2,Trigger;Trig
 安娜,2,Anna;Ana
-鈴鐺,2,Bell;Bells
 布林,2,Bryn;Brin
-位元組,2,Byte;Byter
 凱特,2,Cait;Kat
 卡利,2,Cali;Carli
+卡弗,2,Cave;Kaver
 德米特里,2,Dmitri;Dimitri
 艾米,2,Emmie;Emmi
 費茲,2,Fitz;Fitzy
@@ -195,8 +191,9 @@
 保羅,2,Paulo;Paul
 開膛手,2,Schlitzer;Ripper
 重踏,2,Stomp;Stamper
+壯漢,2,Strapping;Hunky
 尾巴,2,Tail;Hvost
-桑迪,2,Xandy;Sandy
+瓦茲,2,Vas;Waz
 賽夫,2,Zeiph;Xev
 艾力克斯,2,Alex;Alecz
 喬許,2,Josh;Jewsh
@@ -268,6 +265,7 @@
 露西,2,Lucy;Luci
 大師,2,Master;Maestro
 麵條,2,Noodles;Noodle
+縱火狂,2,Pyro;Immolator
 遊俠,2,Ranger;Rogue
 拉茲,2,Raz;Luds
 智者,2,Sage;Wise
@@ -277,6 +275,7 @@
 維尼,2,Vinny;Vinney
 凜冬,2,Winter;Wynter
 野獸,2,Beast;Animal
+大個子,2,Bigs;Biggy
 大老闆,2,Bossman;El Hefe
 蛋糕,2,Cake;Torta
 奇科,2,Chico;Kikko
@@ -340,7 +339,7 @@ JB,2,JB;JayBee
 布莉,2,Bri;Bree
 蟲子,2,Bug;Bugs
 屠夫,2,Butch;Slaughter
-奶油,2,Butters;Cream
+劊子手,2,Butcher;Executioner
 卡勒,2,Calle;Kalle
 糖果,2,Candy;Karkkis
 胡蘿蔔,2,Carrot;Moehre
@@ -375,6 +374,7 @@ LJ,2,LJ;L J
 肉丸,2,Meatball;Albondiga
 麥可,2,Michael;Micheal
 鬍子,2,Moustache;Hige
+肌肉男,2,Muscles;Brawn
 娜蒂,2,Nattie;Nati
 奧托,2,Otto;Orto
 佩吉,2,Pagey;Page
@@ -382,7 +382,6 @@ LJ,2,LJ;L J
 帕西,2,Passi;Pasi
 桃子,2,Peaches;Peachy
 負鼠,2,Possum;Oposum
-死神,2,Reaper;Kostucha
 火箭,2,Rocket;Rockett
 魯比,2,Ruby;Rubi
 水手,2,Sailor;Mariner
@@ -513,6 +512,7 @@ LJ,2,LJ;L J
 油頭,2,Grease;Oily
 溫蒂,2,Gwendi;Venti
 哈德,2,Had;Hud
+火腿,2,Ham;Gammon
 哈姆斯,2,Hams;Harms
 浩,2,Hao;Hiroshi
 哈莉,2,Hari;Harri
@@ -520,6 +520,7 @@ LJ,2,LJ;L J
 海蒂,2,Hatty;Hettie
 霍克斯,2,Hawks;Hox
 嬉皮,2,Hippie;Hippy
+流浪漢,2,Hobo;Tramp
 霍騰,2,Hooten;Hotten
 里斯,2,Hris;Riess
 赫,2,Hyeok;Hyuk
@@ -546,6 +547,7 @@ LJ,2,LJ;L J
 科尼,2,Koni;Kony
 怪咖,2,Kooky;Screwball
 庫奇,2,Kuchy;Kucy
+粉碎者,2,Kudakeru;Crush
 快手,2,Kwikk;Snatch
 拉克,2,Lac;Rak
 拉拉,2,Lala;Rala
@@ -591,8 +593,6 @@ LJ,2,LJ;L J
 羅奇,2,Roachey;Rochy
 羅科,2,Rocco;Rokko
 羅迪,2,Roddy;Rodi
-浪人,2,Ronin;Tramp
-斯卡格,2,Scagg;Skagor
 舒比,2,Schubi;Shooby
 史酷比,2,Scoob;Scooby
 邋遢鬼,2,Scruff;Slob
@@ -616,6 +616,7 @@ LJ,2,LJ;L J
 震顫,2,Tremors;Judder
 沙皇,2,Tsar;Tzar
 月,2,Tsuki;Yue
+瓦斯,2,Vass;Was
 維歐,2,Veo;Vio
 懷斯,2,Vice;Wyce
 沃德,2,Vulder;Ward
@@ -624,12 +625,11 @@ LJ,2,LJ;L J
 枯萎,2,Blight;Wilt
 野豬,2,Boar;Razorback
 波哥,2,Bogo;Poggo
-碎骨者,2,Bonegrind;Cruncher
+窒息,2,Choke;Smother
 顫動,2,Flutter;Twitch
 微光,2,Glimmer;Wisp
 怒視,2,Glower;Scowl
 小豬,2,Hoggy;Piglet
-殺戮,2,Murder;Slay
 豬鼻,2,Nostril;Snout
 大肚腩,2,Paunch;Potbelly
 陷阱,2,Snare;Trap
