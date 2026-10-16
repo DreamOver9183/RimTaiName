@@ -5,12 +5,18 @@
   <RimTaiName_Translate>Translate name</RimTaiName_Translate>
   <RimTaiName_Translating>Translating...</RimTaiName_Translating>
   <RimTaiName_TranslateTip>Translate the unlocked first name, nickname and last name into Traditional Chinese. Your personal cache and the built-in dictionary come first; anything else goes to Gemini in one request (needs an API key).</RimTaiName_TranslateTip>
+  <RimTaiName_Generate>Generate name</RimTaiName_Generate>
+  <RimTaiName_GenerateTip>Give the unlocked fields a new Traditional Chinese name that suits the pawn's gender, backstory, culture and xenotype (needs an API key; one request each time). Locked fields stay as they are and set the style. Generated names are not stored in your personal cache.</RimTaiName_GenerateTip>
   <RimTaiName_Restore>Restore</RimTaiName_Restore>
   <RimTaiName_RestoreTip>Put the unlocked fields back to what they were when this window opened.</RimTaiName_RestoreTip>
   <RimTaiName_Dialog_NoKey>Not in the built-in dictionary: {0}. Set a Gemini API key in the mod settings to translate it.</RimTaiName_Dialog_NoKey>
   <RimTaiName_Dialog_RemoteFailed>Could not translate {0}: {1}</RimTaiName_Dialog_RemoteFailed>
   <RimTaiName_Dialog_Rejected>Gemini's translation broke the name rules for: {0}. The original was kept.</RimTaiName_Dialog_Rejected>
   <RimTaiName_Dialog_NothingToTranslate>Nothing to translate: every field is locked, blank or already Chinese.</RimTaiName_Dialog_NothingToTranslate>
+  <RimTaiName_Dialog_GenerateNoKey>Generating a name needs a Gemini API key. Set one in the mod settings first.</RimTaiName_Dialog_GenerateNoKey>
+  <RimTaiName_Dialog_GenerateFailed>Could not generate {0}: {1}</RimTaiName_Dialog_GenerateFailed>
+  <RimTaiName_Dialog_GenerateRejected>Gemini's new name broke the name rules for: {0}. The field was left as it was.</RimTaiName_Dialog_GenerateRejected>
+  <RimTaiName_Dialog_NothingToGenerate>Nothing to generate: every field is locked.</RimTaiName_Dialog_NothingToGenerate>
 
   <!-- Gemini results -->
   <RimTaiName_Gemini_Ok>Connected: the key and the model both work.</RimTaiName_Gemini_Ok>

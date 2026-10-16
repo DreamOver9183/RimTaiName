@@ -10,21 +10,40 @@ using Verse;
 namespace RimTaiName.UI_Patches
 {
     /// <summary>
-    /// The naming dialog's translate / restore / learn flow (v3 §5.3). Main thread only; the Gemini request runs
-    /// in <see cref="DialogState.Job"/> and its result is picked up on a later Layout event.
+    /// The naming dialog's translate / generate / restore / learn flow (v3 §5.3, §7.4). Main thread only; the
+    /// Gemini request runs in <see cref="DialogState.Job"/> and its result is picked up on a later Layout event.
     /// </summary>
     internal static class DialogTranslation
     {
+        /// <summary>Only varies the prompt hints; not the game's Verse.Rand, so the colony's random sequence is untouched.</summary>
+        private static readonly Random Seeds = new Random();
+
         /// <summary>Toolbar button: write what the pipeline resolves locally, send the rest to Gemini in one request.</summary>
-        public static void Translate(Dialog_NamePawn dialog, DialogState state)
+        public static void Translate(Dialog_NamePawn dialog, DialogState state) => Run(dialog, state, ProcessMode.Translate);
+
+        /// <summary>Toolbar button: new Chinese names for the unlocked fields from the pawn's background (phase 2).</summary>
+        public static void Generate(Dialog_NamePawn dialog, DialogState state) => Run(dialog, state, ProcessMode.Generate);
+
+        private static void Run(Dialog_NamePawn dialog, DialogState state, ProcessMode mode)
         {
             if (state.Job.Running)
                 return;
             string[] current = NamePawnAccess.ReadFields(NamePawnAccess.Rows(dialog), out bool[] editable);
             NameDialogSession session = state.Session;
-            NameRequestPayload payload = session.CreatePayload(current, editable, RimTaiNameMod.Settings.keepVanillaAddress);
+            NameRequestPayload payload = session.CreatePayload(current, editable, RimTaiNameMod.Settings.keepVanillaAddress, mode);
             NameProcessorService processor = RimTaiNameMod.Processor;
-            NameResult local = processor.ResolveLocal(payload);
+            NameResult local;
+            if (mode == ProcessMode.Generate)
+            {
+                payload.Context = PawnContextReader.Read(state.Pawn);
+                payload.Seed = Seeds.Next();
+                local = processor.PlanGeneration(payload);
+            }
+            else
+            {
+                local = processor.ResolveLocal(payload);
+            }
+            state.LastMode = mode;
 
             List<NameField> wanted = Fields(local, f => f.Source == FieldSource.Pending && !f.AliasOf.HasValue);
             IDisposable lease = null;
@@ -32,7 +51,9 @@ namespace RimTaiName.UI_Patches
             if (wanted.Count > 0)
             {
                 if (!ApiKeyStore.HasKey)
-                    problem = "RimTaiName_Dialog_NoKey".Translate(FieldList(wanted));
+                    problem = mode == ProcessMode.Generate
+                        ? "RimTaiName_Dialog_GenerateNoKey".Translate()
+                        : "RimTaiName_Dialog_NoKey".Translate(FieldList(wanted));
                 else
                     lease = RimTaiNameMod.TryEnterGate(out problem);
             }
@@ -46,11 +67,11 @@ namespace RimTaiName.UI_Patches
                                 e => Failed(local, e));
                 return;
             }
-            Log(local);
+            Log(mode, local);
             if (problem != null)
                 Reject(problem);
             else if (!queued)
-                Reject("RimTaiName_Dialog_NothingToTranslate".Translate());
+                Reject((mode == ProcessMode.Generate ? "RimTaiName_Dialog_NothingToGenerate" : "RimTaiName_Dialog_NothingToTranslate").Translate());
         }
 
         /// <summary>Toolbar button: unlocked fields back to their values at opening; a pending result is no longer applied.</summary>
@@ -72,9 +93,9 @@ namespace RimTaiName.UI_Patches
                 NameResult result = state.Job.Result;
                 bool applies = state.Session.AwaitingRemote; // false after a restore: the result only feeds the cache
                 Queue(state, state.Session.CompleteTranslation(result, current));
-                Log(result);
+                Log(state.LastMode, result);
                 if (applies)
-                    ReportFailures(result);
+                    ReportFailures(state.LastMode, result);
                 SaveCache();
             }
             if (state.PendingWrite != null)
@@ -155,16 +176,17 @@ namespace RimTaiName.UI_Patches
             state.ClickOutsideSuspended = true;
         }
 
-        private static void ReportFailures(NameResult result)
+        private static void ReportFailures(ProcessMode mode, NameResult result)
         {
             List<NameField> failed = Fields(result, f => f.Source == FieldSource.Failed);
             if (failed.Count == 0)
                 return;
+            bool generate = mode == ProcessMode.Generate;
             if (result.RemoteError != GeminiErrorKind.None)
-                Reject("RimTaiName_Dialog_RemoteFailed".Translate(FieldList(failed),
+                Reject((generate ? "RimTaiName_Dialog_GenerateFailed" : "RimTaiName_Dialog_RemoteFailed").Translate(FieldList(failed),
                     GeminiMessages.Describe(result.RemoteError, result.RemoteStatusCode, result.RemoteDetail)));
             else
-                Reject("RimTaiName_Dialog_Rejected".Translate(FieldList(failed)));
+                Reject((generate ? "RimTaiName_Dialog_GenerateRejected" : "RimTaiName_Dialog_Rejected").Translate(FieldList(failed)));
         }
 
         /// <summary>Only for an exception the pipeline itself did not turn into a result.</summary>
@@ -177,11 +199,11 @@ namespace RimTaiName.UI_Patches
                                   GeminiErrorKind.InvalidResponse, 0, e.GetType().Name);
         }
 
-        private static void Log(NameResult result)
+        private static void Log(ProcessMode mode, NameResult result)
         {
             if (result == null)
                 return;
-            ModLog.Message($"translate: {result[NameField.First].Source}/{result[NameField.Nick].Source}/{result[NameField.Last].Source}" +
+            ModLog.Message($"{(mode == ProcessMode.Generate ? "generate" : "translate")}: {result[NameField.First].Source}/{result[NameField.Nick].Source}/{result[NameField.Last].Source}" +
                            (result.RemoteStatusCode != 0 || result.RemoteError != GeminiErrorKind.None
                                ? $", remote {result.RemoteError} (HTTP {result.RemoteStatusCode})"
                                : string.Empty));
