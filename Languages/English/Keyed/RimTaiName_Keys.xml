@@ -23,6 +23,23 @@
   <RimTaiName_Gemini_UnexpectedStatus>Gemini returned an unexpected status (HTTP {0}).</RimTaiName_Gemini_UnexpectedStatus>
   <RimTaiName_Gemini_InvalidResponse>Gemini's response could not be read. Please try again later.</RimTaiName_Gemini_InvalidResponse>
 
+  <!-- Request limits -->
+  <RimTaiName_Gate_Busy>A Gemini request is already running. Please wait.</RimTaiName_Gate_Busy>
+  <RimTaiName_Gate_TooSoon>Too many requests. Please try again in {0} s.</RimTaiName_Gate_TooSoon>
+
+  <!-- Fields and translation sources -->
+  <RimTaiName_Field_First>First name</RimTaiName_Field_First>
+  <RimTaiName_Field_Nick>Nickname</RimTaiName_Field_Nick>
+  <RimTaiName_Field_Last>Last name</RimTaiName_Field_Last>
+  <RimTaiName_Source_Unchanged>unchanged</RimTaiName_Source_Unchanged>
+  <RimTaiName_Source_SpecialForm>special form</RimTaiName_Source_SpecialForm>
+  <RimTaiName_Source_Alias>same as first/last name</RimTaiName_Source_Alias>
+  <RimTaiName_Source_PersonalCache>personal cache</RimTaiName_Source_PersonalCache>
+  <RimTaiName_Source_Dictionary>built-in dictionary</RimTaiName_Source_Dictionary>
+  <RimTaiName_Source_Api>Gemini</RimTaiName_Source_Api>
+  <RimTaiName_Source_Failed>failed</RimTaiName_Source_Failed>
+  <RimTaiName_Source_Pending>pending</RimTaiName_Source_Pending>
+
   <!-- Settings: API key -->
   <RimTaiName_Settings_KeyHeading>Gemini API key</RimTaiName_Settings_KeyHeading>
   <RimTaiName_Settings_KeySaved>Saved key: {0}</RimTaiName_Settings_KeySaved>
@@ -63,6 +80,16 @@
   <RimTaiName_Settings_CacheClear>Clear cache</RimTaiName_Settings_CacheClear>
   <RimTaiName_Settings_CacheClearConfirm>Clear all {0} cached translations? Your own corrections are deleted too. This cannot be undone.</RimTaiName_Settings_CacheClearConfirm>
   <RimTaiName_Settings_CacheOpenFolder>Open config folder</RimTaiName_Settings_CacheOpenFolder>
+
+  <!-- Settings: developer -->
+  <RimTaiName_Settings_DevHeading>Developer: translation test</RimTaiName_Settings_DevHeading>
+  <RimTaiName_Settings_DevStatus>Built-in dictionary: {0} entries; translation rules file: {1}</RimTaiName_Settings_DevStatus>
+  <RimTaiName_Settings_DevRulesOk>loaded</RimTaiName_Settings_DevRulesOk>
+  <RimTaiName_Settings_DevRulesMissing>missing (minimum rules in use)</RimTaiName_Settings_DevRulesMissing>
+  <RimTaiName_Settings_DevDictError>Dictionary failed to load: {0}</RimTaiName_Settings_DevDictError>
+  <RimTaiName_Settings_DevTranslate>Translate test</RimTaiName_Settings_DevTranslate>
+  <RimTaiName_Settings_DevNote>Enter first name, nickname and last name. Runs the whole translation pipeline; fields not in the dictionary use 1 Gemini request.</RimTaiName_Settings_DevNote>
+  <RimTaiName_Settings_DevField>{0}: {1} → {2} ({3})</RimTaiName_Settings_DevField>
 
   <!-- Settings: privacy -->
   <RimTaiName_Settings_PrivacyHeading>Privacy and key safety</RimTaiName_Settings_PrivacyHeading>

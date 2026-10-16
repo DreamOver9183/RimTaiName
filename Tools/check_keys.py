@@ -21,6 +21,8 @@ SOURCE = os.path.join(ROOT, 'Source', 'RimTaiName')
 DYNAMIC = {
     'RimTaiName_Gemini_': ('GeminiErrorKind', {'None', 'BadRequest', 'UnexpectedStatus', 'QuotaExceeded'}),
     'RimTaiName_Settings_KeySave': ('KeySaveResult', {'Ok'}),
+    'RimTaiName_Field_': ('NameField', set()),
+    'RimTaiName_Source_': ('FieldSource', set()),
 }
 LITERAL = re.compile(r'"(RimTaiName_[A-Za-z0-9_]+)"')
 
