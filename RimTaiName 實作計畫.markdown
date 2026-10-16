@@ -34,7 +34,7 @@
   - [x] 共用規則檔 `Prompts/NameRules_zhTW.txt`、`name_rules.py` 改讀規則檔（提示逐字不變）、`PromptBuilder`（PR #11）
   - [x] `GeminiNameTranslator`（實作 `ILlmClient`）與 `RequestGate`；即時測試：三個字典沒有的名字經整條管線實際翻譯成功（PR #12）
   - [x] 接進 Mod、`UiJob`、測試連線經請求限制、開發者模式的「翻譯測試」（PR #13）
-  - [x] 遊戲內實測（`TestLog/4`）：翻譯測試兩次（三欄 Gemini；Gemini＋內建字典暱稱）、測試連線兩次皆 HTTP 200；連點時按鈕在請求進行中停用，沒有重複送出；稽核與 log 掃描都沒有金鑰
+  - [x] 遊戲內實測（`TestLog/4`）：翻譯測試兩次（三欄 Gemini；Gisele／Fox／Millere → Gemini、內建字典、Gemini，姓欄實際輸入由測試機快取檔確認）、測試連線兩次皆 HTTP 200；連點時按鈕在請求進行中停用，沒有重複送出；稽核與 log 掃描都沒有金鑰
   - 未在遊戲內觸發：請求限制的拒絕訊息（按鈕停用已擋下連點；拒絕邏輯由 `RequestGateTests` 涵蓋）、斷網
   - 遊戲內測試用名：真實字典有 Fox（名、暱稱）、Miller，**沒有 Gisele**（只有單元測試的假字典有）
   - 與原計畫的差異：`TranslateAsync` 放在獨立的 `GeminiNameTranslator`（傳輸與翻譯語意分開）；新增 `Core/UiJob<T>` 供設定頁與 Step 4 共用
