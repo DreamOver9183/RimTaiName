@@ -43,7 +43,7 @@
 | :--- | :--- | :--- |
 | 研究與規格校正 | 完成 | v1 → v2 共 16 項修正（附錄 A） |
 | 原版人名抽取 | 完成 | `Tools/extract_vanilla_names.py` → `NameTable/`：共 24,596 個名字詞，分四層 |
-| 內建字典 v0.1 | 完成（部分校對） | `Dictionary/BaseNames_zhTW.tsv`。第 1 層逐筆校對；官方譯名逐筆對照；第 2、4 層待校對 |
+| 內建字典 v1.0 | 完成 | `Dictionary/BaseNames_zhTW.tsv`。第 1、2、4 層逐筆校對；官方譯名逐筆對照；第 3 層抽查（v1.0 於 Step 5 完成） |
 | Step 0 技術驗證 | 完成 | Harmony patch、遊戲內 HTTPS、工具列與鎖頭、焦點寫入皆通過；在測試機 386 個 Mod 環境下正常。新生兒視窗（開發模式＋上帝模式，有／無父母）與成年視窗已實測，鎖頭靠右對齊 |
 | 開發環境 | 完成 | .NET 10 SDK 10.0.402；直接引用遊戲 DLL 編譯；`RimWorld\Mods\RimTaiName` 以 junction 連到專案；本機 git（branch `main`） |
 | 實作計畫 | 完成並重審 | `RimTaiName 實作計畫.markdown`：Step 0～7 的工作清單與進度勾選。10-16 重審遊戲 API 與 Gemini API，修正已回寫本文件（附錄 A） |
@@ -51,7 +51,8 @@
 | Step 2 | 完成 | PR #8～#10：名字規則（與 Python 逐筆一致的 fixture）、內建字典、暱稱別名與 `NameProcessorService`；單元測試 252 項 |
 | Step 3 | 完成 | PR #11～#13：共用規則檔與 `PromptBuilder`、`GeminiNameTranslator`、`RequestGate`、`UiJob`、設定頁的開發者翻譯測試；單元測試 296 項、即時測試 5 項；測試機實測翻譯（Gemini＋內建字典）、測試連線與金鑰稽核皆通過（`TestLog/4`） |
 | Step 4（**MVP**） | 完成 | PR #14、#16：命名視窗正式版——「翻譯姓名」「還原」、等待中保護（暫停點外關閉、只覆寫沒被改過的欄位、晚到結果只進快取）、確定後學習玩家修正；單元測試 327 項；測試機實測通過（`TestLog/5`、`TestLog/5-2`） |
-| Step 5～7 | 未開始 | 見第 11 節 |
+| Step 5 | 完成 | PR #17：字典 v1.0——第 2、4 層逐筆校對（修正 100 筆），新增 `review_accepted.csv` 與校對表工具 `Tools/review_sheet.py`；校對佇列只剩第 3 層；Prompt 範例擴充 |
+| Step 6～7 | 未開始 | 見第 11 節 |
 
 **驗證用 Mod 的現有程式（Step 4 會改寫成正式版）：**
 *   `Source/RimTaiName/Core/RimTaiNameMod.cs`：Mod 進入點；逐一套用 patch，單一失敗不影響其他。
@@ -214,16 +215,16 @@ TestLog/    ✓ 測試機傳回的 Player.log
 | Tier | 來源 | 詞數 | 校對 |
 | :-- | :--- | --: | :--- |
 | 1 | 名字庫 | 1,654 | 已逐筆校對 |
-| 2 | 固定角色 299 人＋稀有角色 9 人 | 624 | 待校對 |
+| 2 | 固定角色 299 人＋稀有角色 9 人 | 624 | 已逐筆校對（Step 5） |
 | 3 | 玩家貢獻名字 16,136 筆 | 21,769 | 抽查 150 筆，估計錯誤率 1～2% |
-| 4 | DLC 清單（帝國、怪人、豬人、廢土人） | 549 | 官方譯名已對照；其餘待校對 |
+| 4 | DLC 清單（帝國、怪人、豬人、廢土人） | 549 | 已逐筆校對（Step 5；官方譯名原則上保留） |
 
 **最終譯名的採用順序**（`Tools/merge_dictionary.py`）：
-1.  `review_corrections.csv`：人工修正，70 筆。
+1.  `review_corrections.csv`：人工修正，170 筆（含 Step 5 校對的 100 筆）。已檢查、保留原譯的條目記在 `review_accepted.csv`。
 2.  特殊字形規則：112 筆。
 3.  `official_overrides.csv`：官方誤譯覆寫，45 筆。
-4.  官方繁中譯名：310 筆。
-5.  Gemini 譯名：23,993 筆。
+4.  官方繁中譯名：309 筆。
+5.  Gemini 譯名：23,895 筆（另有 30 筆是官方譯名被覆寫後改用 Gemini）。
 6.  之後再做一次自動統一：暱稱若只是人名的拼法變體，就改用人名的譯法，共 66 筆。
 
 **維護方式：**

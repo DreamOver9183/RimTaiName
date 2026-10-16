@@ -78,6 +78,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | 金鑰稽核（測試機） | 把 `Tools/audit_key_leak.ps1` 複製到測試機，在 **PowerShell**（不是 cmd）執行 `powershell -NoProfile -ExecutionPolicy Bypass -File audit_key_leak.ps1`；結束碼 0 乾淨、1 找到金鑰、2 找不到資料夾、3 有檔案讀不到。自我測試：`Tools/test_audit_key_leak.ps1`（13 個情境） |
 | 打包腳本自我測試 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/test_package_mod.ps1`（改動打包腳本時執行，11 個情境） |
 | 重新產生字典 | `python -I Tools/merge_dictionary.py` |
+| 字典校對 | `python -I Tools/review_sheet.py export` → 填 `review_sheet.csv` 的 suggestion／reason／decision（fix／keep）→ `python -I Tools/review_sheet.py apply` → 重新產生字典與 fixture。流程見 `NameTable/translations/README.md` |
 | 規則一致性 fixture | `python -I Tools/export_rule_fixtures.py` → `Source/RimTaiName.Tests/Fixtures/rules.tsv`。改 `name_rules.py` 或重新產生字典後都要重跑，再 `dotnet test` 確認 C# 的 `NameKey`／`SpecialFormRule`／`NameSanitizer.Check` 與 Python 逐筆一致 |
 | 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
 | PR 自動審查 | `python -I Tools/agy_review.py <PR#> --post` |
@@ -124,6 +125,11 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **受限的文字輸入：** 用 `Widgets.TextField(rect, text, maxLength, regex)`，超長或不符的輸入直接被拒絕，不要事後 `Substring` 截斷（可能切斷代理對）。
 *   **給玩家或記錄的錯誤細節：** 先遮蔽金鑰、再截斷（Gemini 為 200 字）；截斷點落在高代理字元時往前退一格，不切斷代理對。錯誤 JSON 沒有 `message` 時改用原始回應內容。
 *   **字典產生：** Python 工具鏈 `extract_vanilla_names.py` → `build_full_input.py` → `agy_translate.py` → `merge_dictionary.py`；人工修正寫在 `NameTable/translations/` 的 CSV，不直接改 TSV。
+*   **字典校對的定案紀錄：**
+    *   `review_corrections.csv` 放改過的譯名，優先序最高，修正官方譯名也寫這裡。
+    *   `review_accepted.csv` 放「已檢查、保留原譯」的條目，並記下當時的譯名；之後譯名一變，該條就會重回 `review_queue.csv`。
+    *   兩個工具比對條目時，一律用 `name_rules.entry_key`（Trim、NFC、小寫），讀 CSV 一律用 `read_rows`（略過空列）。
+*   **大量校對的做法：** 我先逐筆看過；同時用 Antigravity 開一個 agy 呼叫，配 5 個 chunk 檔與子代理，讓 Gemini 獨立審一次（約 600 筆約 20 分鐘）。Gemini 的建議要逐筆裁決，Step 5 的 77 筆只採用約四成。最後列出修改清單請使用者確認。
 
 ---
 
@@ -200,3 +206,5 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   PowerShell 的 here-string 無法以 `git commit -F -` 從 stdin 傳入；先寫成檔案。
 *   PowerShell 5.1 對原生程式的 stderr 重新導向會產生 `NativeCommandError` 並讓 `$?` 變 false，即使程式回傳 0。
 *   `*.tsv` 由 `.gitattributes` 固定為 LF（遊戲端解析器與 `merge_dictionary.py` 都用 LF）。
+*   會產生「待編輯檔案」的工具（例如 `review_sheet.py export`）不可直接覆寫既有的檔案，因為裡面可能有還沒套用的決定，要加 `--force` 才能重來。Step 5 曾因此蓋掉一份已套用的校對表。
+*   字典暱稱撞名（不同原文譯成同一個詞，例如 Smother 與 Choke 都是「窒息」）只是提示，見 `nick_collisions.csv`。使用者指定的譯名照用，回報時提一句即可。

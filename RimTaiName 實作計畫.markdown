@@ -45,13 +45,18 @@
   - 第一次實測（`TestLog/5`）的第 5 步沒有留下學習紀錄，第二次重測（`TestLog/5-2`）有，原因無法從 log 判斷；若再發生，先加「確定時學到幾筆」的記錄再查
   - 未在遊戲內測試：沒有 API Key 時的提示、等待中按 Enter（邏輯與 ESC 相同，晚到的結果只進快取）
   - 與原計畫的差異：`RequestId` 改由 `NameDialogSession` 的世代計數與 `UiJob` 處理；特殊字形與從「建議...」選的姓不學習；把譯名換成英文後再改回中文也不算修正
-- [ ] Step 5：字典 v1.0
+- [x] Step 5：字典 v1.0（2026-10-16，PR #17）
+  - [x] `Tools/review_sheet.py`（export／apply）與 `review_accepted.csv`；`merge_dictionary.py` 的 `review_queue.csv` 排除已定案條目
+  - [x] 第 2、4 層 1,170 筆逐筆校對：Claude 全數檢查，Gemini 子代理獨立審查，使用者確認（調整 7 筆）。修正 100 筆，其餘 1,135 筆（含第 1 層單字名 65 筆）列入 `review_accepted.csv`
+  - [x] `review_queue.csv` 只剩第 3 層 430 筆；字典與 fixture 重新產生，單元測試 322 項通過、即時測試 5／5
+  - [x] Prompt【範例】新增 9 個字典內的例子
+  - 與原計畫的差異：`review_accepted.csv` 多記 `value`，譯名變動時會重新進入校對佇列；只帶提示性標記的人工修正也視為定案；修正官方譯名一律寫進 `review_corrections.csv`
 - [ ] Step 6：第二階段（生成中文名）
 - [ ] Step 7：上架 Steam 創意工坊
 
 ## Context
 
-v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定案設計與路線圖。Step 0～4 已完成，MVP 達成（皆為 2026-10-16）；下一步是 Step 5（字典 v1.0）。
+v3 計畫書（`RimTaiName 開發計畫書 v3.markdown`，2026-10-16）已經定案設計與路線圖。Step 0～5 已完成，MVP 達成，字典升級為 v1.0（皆為 2026-10-16）；下一步是 Step 6（第二階段：生成中文名）。
 
 本文件把 v3 第 11 節的路線圖展開成可以直接執行的工作清單，每一步都列出：
 *   要建立或修改哪些檔案。
