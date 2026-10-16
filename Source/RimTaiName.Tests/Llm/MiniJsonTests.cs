@@ -59,6 +59,8 @@ namespace RimTaiName.Tests.Llm
             Assert.Null(MiniJson.GetString(obj, "code"));
             Assert.Equal("m", MiniJson.GetString(obj, "message"));
             Assert.Null(MiniJson.GetString(null, "x"));
+            Assert.Null(MiniJson.GetString(obj, null));
+            Assert.Null(MiniJson.Get(obj, null));
             Assert.Null(MiniJson.Get(obj, "missing"));
             Assert.Null(MiniJson.AsArray(obj));
         }
@@ -72,6 +74,9 @@ namespace RimTaiName.Tests.Llm
         [InlineData("\"unterminated")]
         [InlineData("\"bad \\q escape\"")]
         [InlineData("tru")]
+        [InlineData("nul")]
+        [InlineData("[fals")]
+        [InlineData("{\"a\":n")]
         [InlineData("<html>502 Bad Gateway</html>")]
         public void RejectsInvalidJson(string json)
         {

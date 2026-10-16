@@ -178,8 +178,10 @@ namespace RimTaiName.Llm
             }
             catch (FormatException)
             {
-                message = text;
+                // Not JSON (e.g. an HTML page from a proxy): the raw text is the only detail there is.
             }
+            if (string.IsNullOrEmpty(message))
+                message = text;
             return GeminiResult.Fail(Classify(status, code, message), status, Shorten(message, key));
         }
 
@@ -198,7 +200,9 @@ namespace RimTaiName.Llm
                 case 404:
                     return GeminiErrorKind.ModelNotFound;
                 case 429:
-                    return code == "quota_exceeded" || Mentions(message, "per day") || Mentions(message, "perday")
+                    // Not RESOURCE_EXHAUSTED: the legacy API uses it for per-minute limits as well.
+                    return string.Equals(code, "quota_exceeded", StringComparison.OrdinalIgnoreCase) ||
+                           Mentions(message, "per day") || Mentions(message, "perday")
                         ? GeminiErrorKind.QuotaExceeded
                         : GeminiErrorKind.RateLimited;
                 default:
@@ -214,7 +218,10 @@ namespace RimTaiName.Llm
             if (string.IsNullOrEmpty(text))
                 return null;
             string redacted = KeyRedactor.Redact(text, key).Trim();
-            return redacted.Length <= MaxDetailLength ? redacted : redacted.Substring(0, MaxDetailLength) + "…";
+            if (redacted.Length <= MaxDetailLength)
+                return redacted;
+            int cut = char.IsHighSurrogate(redacted[MaxDetailLength - 1]) ? MaxDetailLength - 1 : MaxDetailLength;
+            return redacted.Substring(0, cut) + "…";
         }
     }
 }

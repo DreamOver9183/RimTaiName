@@ -41,10 +41,10 @@ namespace RimTaiName.Llm
 
         /// <summary>The string value of <paramref name="name"/>, or null when missing or not a string.</summary>
         public static string GetString(Dictionary<string, object> obj, string name) =>
-            obj != null && obj.TryGetValue(name, out object value) ? value as string : null;
+            Get(obj, name) as string;
 
         public static object Get(Dictionary<string, object> obj, string name) =>
-            obj != null && obj.TryGetValue(name, out object value) ? value : null;
+            obj != null && name != null && obj.TryGetValue(name, out object value) ? value : null;
 
         private static void Write(StringBuilder sb, object value, int depth)
         {
@@ -308,7 +308,8 @@ namespace RimTaiName.Llm
 
             private object ReadLiteral(string literal, object value)
             {
-                if (string.CompareOrdinal(text, pos, literal, 0, literal.Length) != 0)
+                // Check the length first: Mono's CompareOrdinal may throw instead of comparing a truncated tail.
+                if (pos + literal.Length > text.Length || string.CompareOrdinal(text, pos, literal, 0, literal.Length) != 0)
                     throw Error("invalid literal");
                 pos += literal.Length;
                 return value;

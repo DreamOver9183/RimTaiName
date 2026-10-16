@@ -129,6 +129,8 @@ namespace RimTaiName.Tests.Llm
         [InlineData(429, "rate_limit_exceeded", "Too many requests per minute", GeminiErrorKind.RateLimited)]
         [InlineData(429, "too_many_requests", "Slow down", GeminiErrorKind.RateLimited)]
         [InlineData(429, "RESOURCE_EXHAUSTED", "Quota GenerateRequestsPerDayPerProjectPerModel-FreeTier exceeded", GeminiErrorKind.QuotaExceeded)]
+        [InlineData(429, "QUOTA_EXCEEDED", "Daily quota exceeded", GeminiErrorKind.QuotaExceeded)]
+        [InlineData(429, "RESOURCE_EXHAUSTED", "Quota GenerateRequestsPerMinutePerProjectPerModel exceeded", GeminiErrorKind.RateLimited)]
         [InlineData(302, "", "", GeminiErrorKind.UnexpectedStatus)]
         public async Task ClassifiesErrors(int status, string code, string message, GeminiErrorKind expected)
         {
@@ -206,6 +208,25 @@ namespace RimTaiName.Tests.Llm
             var (client, _) = Create(responses: Respond(400, Error("invalid_request", new string('x', 500))));
             GeminiResult result = await client.CheckAsync(Model, Ct);
             Assert.Equal(201, result.Detail.Length);
+        }
+
+        [Fact]
+        public async Task TruncationNeverSplitsASurrogatePair()
+        {
+            string message = new string('x', 199) + "𠀋" + new string('y', 50);
+            var (client, _) = Create(responses: Respond(400, Error("invalid_request", message)));
+            GeminiResult result = await client.CheckAsync(Model, Ct);
+            Assert.Equal(new string('x', 199) + "…", result.Detail);
+        }
+
+        [Theory]
+        [InlineData(403, "{\"error\":\"Unauthorized\"}")]
+        [InlineData(500, "<html>500 Internal Server Error</html>")]
+        public async Task FallsBackToRawBodyWhenErrorHasNoMessage(int status, string body)
+        {
+            var (client, _) = Create(responses: new[] { Respond(status, body), Respond(status, body) });
+            GeminiResult result = await client.CheckAsync(Model, Ct);
+            Assert.Equal(body, result.Detail);
         }
 
         [Fact]
