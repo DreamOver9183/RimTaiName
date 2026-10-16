@@ -14,7 +14,7 @@ namespace RimTaiName
 {
     public class RimTaiNameMod : Mod
     {
-        public const string HarmonyId = "RimTaiName.Dev";
+        public const string HarmonyId = "DreamOver9183.RimTaiName";
 
         private const string CacheFileName = "RimTaiName_Cache.xml";
 
@@ -94,7 +94,9 @@ namespace RimTaiName
             return lease;
         }
 
-        public override string SettingsCategory() => "RimTaiName";
+        /// <summary>The name from About.xml, so the settings list matches the mod list and the Workshop page.</summary>
+        public override string SettingsCategory() =>
+            string.IsNullOrWhiteSpace(Content?.Name) ? "RimTaiName" : Content.Name.Trim(); // an empty category hides the mod from the list
 
         public override void DoSettingsWindowContents(Rect inRect) => SettingsPage.Draw(inRect);
 

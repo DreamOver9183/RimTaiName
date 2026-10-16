@@ -1,0 +1,56 @@
+[h1]RimTaiName (邊緣臺名)[/h1]
+Translates pawn names into [b]Traditional Chinese as used in Taiwan[/b]. Vanilla names are translated offline and need [b]no API key at all[/b]; names from other mods and brand-new Chinese names use the Google Gemini API with your own free API key.
+
+[h2]Features[/h2]
+Press rename on the character card (the newborn naming window works too) and the window gains:
+[list]
+[*][b]Lock icons[/b] for first name, nickname and last name: locked fields are never changed.
+[*][b]Translate name[/b]: your personal cache first, then the built-in dictionary (all 24,596 vanilla name words; tiers 1, 2 and 4 reviewed entry by entry), and only the rest goes to Gemini in one request.
+[*][b]Generate name[/b]: a new Chinese name for the unlocked fields that fits the pawn's gender, backstory, culture and xenotype (needs an API key). Locked fields set the style.
+[*][b]Restore[/b]: unlocked fields go back to what they were when the window opened.
+[/list]
+[list]
+[*]Names that the official Traditional Chinese translation already covers (Imperial nobles, creepjoiner nicknames, ...) keep the official wording.
+[*]Nicknames are translated by meaning (Fox → 狐狸); short forms match the full name (Chris → 克里斯).
+[*]Japanese names use kanji, Chinese/Vietnamese/Korean names use the matching characters.
+[*]Initials stay as letters (MJ, Big D → 大D).
+[*]Change a translation and press Accept: the mod remembers your correction for every later pawn with that name.
+[*]While Gemini is answering, clicking outside does not close the window, and fields you edit meanwhile are not overwritten.
+[/list]
+
+[h2]Getting a free Gemini API key (only for other mods' names and Generate name)[/h2]
+[olist]
+[*]Sign in to [url=https://aistudio.google.com/]Google AI Studio[/url] with a Google account.
+[*]Open "API Keys" and press "Create API key". Use a project [b]without billing[/b].
+[*]Copy the key. Keys issued since May 2026 start with [b]AQ.[/b] and can only call the Gemini API by default.
+[*]In game: Options → Mod settings → 邊緣臺名 RimTaiName, paste the key and press Save (or "Paste from clipboard"), then "Test connection".
+[/olist]
+
+[h2]Key safety[/h2]
+[list]
+[*]The key is never written to save files or the mod settings file. On Windows it is encrypted with DPAPI for your Windows account; on macOS/Linux it is kept for the current session only.
+[*]The mod connects to Google's Gemini API over HTTPS only when you press Translate name, Generate name or Test connection. The key travels in a request header, never in a URL or a log.
+[*]Create a dedicated key in a project without billing: it can only use the free tier, so a leaked key cannot cost you money.
+[*]Older keys starting with AIza: restrict them to the Generative Language API in Google Cloud Console.
+[*]If you suspect a leak, delete and recreate the key in AI Studio, then press "Clear key" in the settings.
+[*]Other mods in the same game could in theory read the key from memory; this cannot be fully prevented.
+[/list]
+
+[h2]Privacy and quota[/h2]
+[list]
+[*]Only names are sent; Generate name also sends gender, backstory titles, culture, xenotype and life stage. The mod collects no statistics.
+[*]Google uses free-tier content to improve its products. Under the Gemini API terms, users in the EEA, Switzerland and the UK may only use paid services.
+[*]The free quota is per project and resets at midnight Pacific time; when it runs out the mod shows the reset time. Test connection also uses one request.
+[*]Requests are at least 3 seconds apart by default (adjustable).
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*]RimWorld 1.6; requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
+[*]Adds nothing to save files; names change only through the vanilla naming window. Safe to add or remove at any time.
+[*]Only the humanlike naming window is changed; animal and mechanoid renaming is untouched.
+[*]Switching from a manual install to the Workshop version resets the mod settings (model, interval); the API key and the personal cache are shared.
+[/list]
+
+[h2]Bug reports[/h2]
+Use [url=https://github.com/DreamOver9183/RimTaiName/issues]GitHub[/url] or the comments, with your Player.log (%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios). The log never contains your key.
