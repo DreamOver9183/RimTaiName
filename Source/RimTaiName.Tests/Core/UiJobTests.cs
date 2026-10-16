@@ -112,6 +112,43 @@ namespace RimTaiName.Tests.Core
         }
 
         [Fact]
+        public async Task FailingErrorHandlerStillEndsTheJob()
+        {
+            var job = new UiJob<Box>();
+            var lease = new Lease();
+            job.Start(_ => throw new InvalidOperationException("boom"), lease, e => throw new NotSupportedException("handler"));
+            await WaitFor(() => !job.Running);
+            Assert.Null(job.Result);
+            Assert.Equal(1, lease.Disposed);
+            Assert.False(job.TakeNewResult());
+        }
+
+        [Fact]
+        public void NullDelegatesAreRejected()
+        {
+            var job = new UiJob<Box>();
+            Assert.Throws<ArgumentNullException>(() => job.Start(null, null, e => null));
+            Assert.Throws<ArgumentNullException>(() => job.Start(_ => Task.FromResult(new Box("x")), null, null));
+            Assert.False(job.Running);
+        }
+
+        [Fact]
+        public async Task ResetRacingWithCompletionNeverLeavesAStaleResult()
+        {
+            var job = new UiJob<Box>();
+            for (int i = 0; i < 200; i++)
+            {
+                job.Start(_ => Task.FromResult(new Box("x")), null, e => null);
+                job.Reset();
+                Assert.False(job.Running);
+                await Task.Yield();
+                Assert.Null(job.Result);
+            }
+            await Task.Delay(50, Ct);
+            Assert.Null(job.Result);
+        }
+
+        [Fact]
         public async Task NewResultIsReportedOnce()
         {
             var job = new UiJob<Box>();

@@ -28,10 +28,18 @@ namespace RimTaiName.Core
         }
 
         /// <summary>Why the request gate refused a new request.</summary>
-        public static string DescribeDenial(GateDenial denial, TimeSpan wait) =>
-            denial == GateDenial.Busy
-                ? "RimTaiName_Gate_Busy".Translate()
-                : "RimTaiName_Gate_TooSoon".Translate(Math.Max(1, (int)Math.Ceiling(wait.TotalSeconds)));
+        public static string DescribeDenial(GateDenial denial, TimeSpan wait)
+        {
+            switch (denial)
+            {
+                case GateDenial.Busy:
+                    return "RimTaiName_Gate_Busy".Translate();
+                case GateDenial.TooSoon:
+                    return "RimTaiName_Gate_TooSoon".Translate(Math.Max(1, (int)Math.Ceiling(wait.TotalSeconds)));
+                default:
+                    return string.Empty;
+            }
+        }
 
         /// <summary>When the daily quota resets, in the player's local time (e.g. "15:00").</summary>
         public static string QuotaResetLocalTime() =>
