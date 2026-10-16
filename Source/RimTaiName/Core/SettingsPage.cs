@@ -1,4 +1,6 @@
 using System;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using RimTaiName.Llm;
 using RimTaiName.Pipeline;
@@ -21,6 +23,12 @@ namespace RimTaiName.Core
 
         private const int KeyFieldMaxLength = 256;
 
+        /// <summary>Room for a pasted "models/" prefix; anything longer is rejected by the text field.</summary>
+        private const int ModelFieldMaxLength = ModelId.MaxLength + 16;
+
+        /// <summary>Model ids are ASCII; refusing everything else also keeps surrogate pairs out of the field.</summary>
+        private static readonly Regex PrintableAscii = new Regex(@"^[\x20-\x7E]*$");
+
         private static Vector2 scroll;
 
         private static float viewHeight = 1000f;
@@ -42,6 +50,11 @@ namespace RimTaiName.Core
 
         private static bool checkLogged = true;
 
+        /// <summary>Bumped whenever a test starts or is abandoned, so a late result from an old test is dropped.</summary>
+        private static int checkGeneration;
+
+        private static CancellationTokenSource checkCancellation;
+
         public static void Draw(Rect inRect, RimTaiNameSettings settings, PersonalNameCache cache, GeminiInteractionsClient gemini)
         {
             if (modelBuffer == null)
@@ -59,13 +72,14 @@ namespace RimTaiName.Core
             Widgets.EndScrollView();
         }
 
-        /// <summary>Called when the settings window closes: forget typed text and re-mask the key.</summary>
+        /// <summary>Called when the settings window closes: forget typed text, re-mask the key, stop a running test.</summary>
         public static void OnClosed()
         {
             keyInput = string.Empty;
             revealKey = false;
             feedback = null;
             modelBuffer = null;
+            ResetCheck();
         }
 
         private static void Heading(Listing_Standard list, string key)
@@ -121,6 +135,7 @@ namespace RimTaiName.Core
             {
                 ApiKeyStore.Clear();
                 keyInput = string.Empty;
+                ResetCheck();
                 SetFeedback("RimTaiName_Settings_KeyCleared".Translate(), false);
             }
             if (feedback != null)
@@ -154,9 +169,7 @@ namespace RimTaiName.Core
             const float labelWidth = 160f;
             Widgets.Label(new Rect(row.x, row.y + 4f, labelWidth, RowHeight), "RimTaiName_Settings_ModelId".Translate());
             var field = new Rect(row.x + labelWidth, row.y, row.width - labelWidth - ButtonWidth - Gap, RowHeight);
-            modelBuffer = Widgets.TextField(field, modelBuffer ?? string.Empty);
-            if (modelBuffer.Length > ModelId.MaxLength + 16)
-                modelBuffer = modelBuffer.Substring(0, ModelId.MaxLength + 16);
+            modelBuffer = Widgets.TextField(field, modelBuffer ?? string.Empty, ModelFieldMaxLength, PrintableAscii);
             if (Widgets.ButtonText(new Rect(field.xMax + Gap, row.y, ButtonWidth, RowHeight), "RimTaiName_Settings_ModelDefault".Translate()))
                 modelBuffer = ModelId.Default;
             if (ModelId.TryNormalize(modelBuffer, out string normalized))
@@ -189,7 +202,8 @@ namespace RimTaiName.Core
                     () =>
                     {
                         cache.Clear();
-                        cache.SaveIfDirty();
+                        if (!cache.SaveIfDirty())
+                            ModLog.Warning("personal cache could not be saved after clearing: " + cache.LastError);
                     },
                     destructive: true));
             }
@@ -220,6 +234,7 @@ namespace RimTaiName.Core
                 if (clearInput)
                     keyInput = string.Empty;
                 revealKey = false;
+                ResetCheck(); // a result for the previous key would be misleading
                 SetFeedback("RimTaiName_Settings_KeySavedNow".Translate(ApiKeyStore.MaskedHint), false);
             }
             else
@@ -234,26 +249,52 @@ namespace RimTaiName.Core
             feedbackIsError = isError;
         }
 
+        /// <summary>Main thread. Logging happens when the result is first drawn, because Verse.Log is a game API.</summary>
         private static void StartCheck(GeminiInteractionsClient gemini, string modelId)
         {
+            ResetCheck();
+            int generation = checkGeneration;
+            var cancellation = new CancellationTokenSource();
+            CancellationToken token = cancellation.Token;
+            checkCancellation = cancellation;
             checking = true;
-            checkResult = null;
             checkLogged = false;
             Task.Run(async () =>
             {
+                GeminiResult result;
                 try
                 {
-                    checkResult = await gemini.CheckAsync(modelId).ConfigureAwait(false);
+                    result = await gemini.CheckAsync(modelId, token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return; // abandoned by ResetCheck
                 }
                 catch (Exception e)
                 {
-                    checkResult = GeminiResult.Fail(GeminiErrorKind.Network, 0, e.GetType().Name);
+                    result = GeminiResult.Fail(GeminiErrorKind.Network, 0, e.GetType().Name);
                 }
-                finally
-                {
-                    checking = false;
-                }
+                if (Volatile.Read(ref checkGeneration) != generation)
+                    return;
+                checkResult = result;
+                checking = false;
             });
+        }
+
+        /// <summary>Main thread: cancels a running test and forgets its result (key changed, page closed).</summary>
+        private static void ResetCheck()
+        {
+            Interlocked.Increment(ref checkGeneration);
+            CancellationTokenSource running = checkCancellation;
+            checkCancellation = null;
+            if (running != null)
+            {
+                running.Cancel();
+                running.Dispose();
+            }
+            checking = false;
+            checkResult = null;
+            checkLogged = true;
         }
     }
 }
