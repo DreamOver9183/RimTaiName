@@ -1,0 +1,127 @@
+# RimTaiName 專案知識庫
+
+RimWorld 1.6 Mod：在原版命名視窗（`Dialog_NamePawn`）加上鎖頭與「翻譯姓名」，把小人的英文姓名轉成臺灣繁體中文譯名。翻譯順序為個人快取 → 內建字典 → Gemini API。
+
+*   **設計與決策：** `RimTaiName 開發計畫書 v3.markdown`（唯一的設計依據，v1／v2 只是歷史）。
+*   **工作清單與進度：** `RimTaiName 實作計畫.markdown`。完成一個 Step 就打勾，並同步更新 v3 §2「現況總覽」。
+*   **資料來源說明：** `NameTable/README.md`、`NameTable/translations/README.md`。
+*   使用者以臺灣繁體中文溝通；文件、註解以外的說明一律用繁體中文。
+
+---
+
+## 環境
+
+| 項目 | 值 |
+| :--- | :--- |
+| 開發機遊戲 | `D:\SteamLibrary\steamapps\common\RimWorld`（1.6.4871 rev590）；`Mods\RimTaiName` 以 junction 連到本專案 |
+| 遊戲 DLL | `RimWorldWin64_Data\Managed\`；反編譯原始碼：https://github.com/Dyyrlysh/RimworldDecompile |
+| Harmony | 開發機 2.4.3（Workshop 2009463077）；**測試機 2.4.2，只能用 2.4.2 已有的 API** |
+| 測試機 | 另一台電腦，`E:\SteamLibrary`，386 個 Mod。使用者回傳 `Player.log` 到 `TestLog/`（已 gitignore） |
+| SDK | .NET 10 SDK 10.0.402；Python 3.12；gh 2.98（帳號 DreamOver9183）；Antigravity CLI `%LOCALAPPDATA%\agy\bin\agy.exe` |
+| 遠端 | https://github.com/DreamOver9183/RimTaiName（**Public**），預設分支 `main` |
+
+---
+
+## 架構規範
+
+```
+Source/RimTaiName/
+├── Core/        Mod 進入點、設定、ApiKeyStore、KeyRedactor、ModLog（可用遊戲型別；KeyRedactor 除外）
+├── Pipeline/    翻譯管線，純 C#
+├── Llm/         Gemini 用戶端，純 C#
+└── UI_Patches/  Harmony patch 與視窗狀態（遊戲型別）
+Source/RimTaiName.Tests/   xUnit，net10.0，以連結方式編譯 Pipeline/**、Llm/**、Core/KeyRedactor.cs
+```
+
+*   **純 C# 層（`Pipeline/`、`Llm/`、`Core/KeyRedactor.cs`）：**
+    *   不引用 `Verse`、`RimWorld`、`UnityEngine`、`HarmonyLib`，也不自己寫記錄；錯誤以回傳值交給呼叫端。
+    *   必須同時能在 net472（遊戲 Mono）與 net10.0（測試）編譯。禁用：`record`、`init`、`Span`、`System.Text.Json`、`HashCode`、`string.Contains(char)`、`ServicePointManager`（net10 過時）。
+    *   檔案路徑由呼叫端傳入，不自己找 `GenFilePaths`。
+*   **執行緒：** 背景執行緒只產生純資料、寫入記憶體快取（加 lock）。`Messages`、`Find.*`、`Translate()`、寫入 `NameContext.current`、快取存檔只在主執行緒。
+*   **零存檔污染：** 不新增 `ThingComp`、`WorldComponent`、`GameComponent`，只透過原版流程寫入 `Pawn.Name`。
+*   **UI：** 只用純文字、Keyed 語言檔與原版 `Widgets`（IMGUI 字型不支援 Emoji）。新字串同時加到 `Languages/ChineseTraditional` 與 `Languages/English` 的 `RimTaiName_Keys.xml`。
+*   **記錄：** 一律經 `Core/ModLog`，訊息先過 `ApiKeyStore.Redact`。訊息前綴 `[RimTaiName]`。
+
+### API Key 規則（不可違反）
+
+*   **可讀取金鑰明文的程式只有三處：** `ApiKeyStore` 內部（含 `Redact`）、`GeminiInteractionsClient`（注入的 `Func<string>`，送出時才取用）、設定頁按「顯示」時。
+*   金鑰只放 `x-goog-api-key` 標頭，絕不放網址、記錄、例外訊息、Prompt、Mod 設定 XML。
+*   端點寫死 `https://generativelanguage.googleapis.com`；`AllowAutoRedirect = false`；不覆寫 TLS 驗證；模型代號必須符合 `^[a-z0-9]+(?:[.-][a-z0-9]+)*$`。
+*   金鑰樣式：舊式 `AIza[0-9A-Za-z_-]{35}`；2026-05 起 AI Studio 新金鑰 `AQ\.[0-9A-Za-z_.-]{20,}`（實測長度 53）。遮蔽格式為「前綴…末 4 碼」。
+*   Windows 用 DPAPI（`ProtectedData`，CurrentUser）存 `Config/RimTaiName_ApiKey.dat`；非 Windows 一律只在本次遊戲期間記憶。
+*   **開發用金鑰：** 專案根目錄的 `RimTaiName_KEY_01.txt`（gitignore 規則 `*_KEY_*.txt`）。只能由腳本或測試在程式內讀取，**絕不 `cat`／`Get-Content` 印出、不貼進對話、不寫入任何檔案或 PR**。檢查格式時只輸出布林值與長度。
+
+---
+
+## 常用指令
+
+PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
+
+| 用途 | 指令 |
+| :--- | :--- |
+| 建置（typecheck） | `dotnet build Source/RimTaiName/RimTaiName.csproj -c Release -warnaserror` |
+| C# lint | `dotnet format Source/RimTaiName/RimTaiName.csproj --verify-no-changes`（測試專案同理） |
+| 單元測試 | `dotnet test Source/RimTaiName.Tests` |
+| Python 語法檢查 | `python -I -m py_compile Tools/<file>.py`（沒有安裝 ruff／pyflakes） |
+| PowerShell 語法檢查 | `[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)`（沒有 PSScriptAnalyzer） |
+| 打包 | `powershell -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（Step 1 建立） |
+| 重新產生字典 | `python -I Tools/merge_dictionary.py` |
+| 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
+| PR 自動審查 | `python -I Tools/agy_review.py <PR#> --post` |
+| 遊戲記錄 | 開發機 `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Player.log` |
+
+---
+
+## 開發流程 SOP（每完成一個獨立模組或可測試單元，依序執行，不可跳過）
+
+1.  **自我審查與測試：** 在功能分支（`feat/<短名>`、`fix/<短名>`）上執行 build（`-warnaserror`）、`dotnet format --verify-no-changes`、`dotnet test`，以及變更檔案的 Python／PowerShell 語法檢查；自己讀一次 diff 做初步 Code Review。
+2.  **發起 PR：** `git push -u origin <branch>`，`gh pr create --base main`。內文附變更摘要與測試結果，結尾加 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`。
+3.  **雙軌審核：**
+    *   先請 Copilot 審查：`gh pr edit <PR#> --add-reviewer "@copilot"`，再以 `gh pr view <PR#> --json reviews,comments` 檢查是否完成。
+    *   Copilot 回報額度耗盡、未回應或無法使用時，改用 `python -I Tools/agy_review.py <PR#> --post`（Antigravity CLI，`gemini-3.8-flash-high`，以子代理平行審查安全性、邊界條件、架構合規）。
+4.  **修正與合併：** 審核意見僅供參考，自行判斷是否採納；修正推上同一分支後 `gh pr merge <PR#> --squash --delete-branch`，再 `git switch main`、`git pull`。
+5.  **提煉更新知識庫：** 只把本次「新增的架構決策、新慣例、踩到的技術坑」寫進本檔，直接在 main commit 並 push。
+
+其他慣例：
+*   Commit 訊息用繁體中文，結尾加 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。在 PowerShell 中先把訊息寫成檔案再 `git commit -F <file>`。
+*   需要遊戲內驗證的項目，打包後交給使用者在測試機實測，`Player.log` 放進 `TestLog/` 再檢查。
+*   雜事可交給 Antigravity CLI；呼叫 Gemini 時盡量讓它用子代理（`invoke_subagent`）平行處理。
+
+---
+
+## 設計模式
+
+*   **逐類別套用 Harmony patch：** `RimTaiNameMod` 建構子對每個 `[HarmonyPatch]` 類別分別 `CreateClassProcessor(type).Patch()` 並 try/catch，一個失敗不影響其他。
+*   **反射存取：** `NamePawnAccess` 在啟動時以 `AccessTools.FieldRefAccess` 建立委派（私有巢狀類別 `NameContext` 用 `AccessTools.Inner`），不使用 Publicizer。
+*   **每個視窗的狀態：** `ConditionalWeakTable<Dialog_NamePawn, DialogState>`；`DialogStateRegistry.Drawing` 記錄目前正在繪製的視窗（IMGUI 單執行緒）。
+*   **寫入文字框：** 只在 `DoWindowContents` Prefix 且 `Event.current.type == EventType.Layout` 時寫入 `NameContext.current`，寫入前先 `UI.UnfocusCurrentTextField()`。
+*   **插入工具列：** Transpiler 以 `CodeMatcher` 找 `rectAggregator.NewRow(17.5f)`，在前面插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；找不到時只停用工具列。
+*   **字典產生：** Python 工具鏈 `extract_vanilla_names.py` → `build_full_input.py` → `agy_translate.py` → `merge_dictionary.py`；人工修正寫在 `NameTable/translations/` 的 CSV，不直接改 TSV。
+
+---
+
+## 踩坑紀錄
+
+### RimWorld
+*   對 `Assembly-CSharp.dll` 做反射時，會碰到 Unity 的靜態建構子會丟例外；`ReflectionOnlyLoadFrom` 需要先載入相依組件。只看中繼資料即可。
+*   `BuildName()` 每次都 `new NameTriple`，所以用 `ReferenceEquals(pawn.Name, 開窗時的 Name)` 偵測「確定」。不要 patch `Pawn.Name` setter（可能被 inline；開局畫面每次按鍵都會重設名字）。
+*   開發者模式下，任何小人的改名視窗都是新生兒版（三列可編輯、無頭銜、姓欄為「建議...」）。
+*   姓欄「建議」清單為空時，`MakeRow` 不畫任何按鈕；鎖頭必須 `NewCol(24f, HorizontalJustification.Right)`。
+*   `CharacterCardUtility.ValidNameRegex` 擋 `·`、`・` 與 CJK 擴充 B 以後的字（代理對、長度算 2）。
+*   Mod 設定檔名是 `Mod_<資料夾名>_<Mod 類別>.xml`：junction 開發版與 Workshop 版的設定不互通。
+*   `Listing_Standard.TextEntry` 沒有長度上限參數，要用 `Widgets.TextField(rect, text, maxLength)`。
+*   Mono 的 `ProtectedData` 在 macOS／Linux 會靜默改用 ManagedProtection，不會丟例外。
+
+### Gemini Interactions API
+*   `response_format` 是 `{"type":"text","mime_type":"application/json","schema":{…}}`，schema 不能直接放。
+*   回應在 `steps[]`，要找 `type == "model_output"`（前面可能有 `thought`），且 `status == "completed"`。
+*   錯誤 `code` 是 snake_case **字串**；`models.get` 等舊 API 是數字 code ＋ `status`。429 分 `quota_exceeded`（每日）與 `rate_limit_exceeded`（每分鐘）。
+*   `temperature`／`top_p`／`top_k` 已棄用，未來模型會回 400；flash-lite 預設 `thinking_level = minimal`。
+
+### 工具與環境
+*   `agy` 逾時時仍回傳 SUCCESS，但回應是空的；要檢查 `structured_output` 是否存在。
+*   `agy -p` 的提示放在命令列參數，Windows 上限約 32,767 字；大量內容改寫成檔案讓代理自己讀。
+*   `python -I` 會忽略 `PYTHONIOENCODING`，而主控台是 cp950：腳本內要 `sys.stdout.reconfigure(encoding='utf-8')`。
+*   PowerShell 的 here-string 無法以 `git commit -F -` 從 stdin 傳入；先寫成檔案。
+*   PowerShell 5.1 對原生程式的 stderr 重新導向會產生 `NativeCommandError` 並讓 `$?` 變 false，即使程式回傳 0。
+*   `*.tsv` 由 `.gitattributes` 固定為 LF（遊戲端解析器與 `merge_dictionary.py` 都用 LF）。

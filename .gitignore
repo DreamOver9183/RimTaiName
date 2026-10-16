@@ -14,3 +14,6 @@ NameTable/**/raw/
 
 # Player.log from the test PC (contains local paths)
 TestLog/
+
+# Local Gemini API keys: never commit
+*_KEY_*.txt
