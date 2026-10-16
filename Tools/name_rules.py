@@ -11,7 +11,7 @@ EXAMPLES_HEADING = '【範例】\n'
 
 def load_shared_rules(path=SHARED_RULES_PATH):
     """Return (rules, examples) from the shared rules file; rules end with a newline."""
-    with open(path, encoding='utf-8') as f:
+    with open(path, encoding='utf-8-sig') as f:  # -sig drops a BOM, as the C# reader does
         text = f.read()
     rules, sep, examples = text.partition('\n' + EXAMPLES_HEADING)
     if not sep:

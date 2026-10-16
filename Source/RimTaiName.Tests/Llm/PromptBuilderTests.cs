@@ -71,6 +71,15 @@ namespace RimTaiName.Tests.Llm
             Assert.Equal(new PromptBuilder(lf).SystemInstruction, new PromptBuilder(lf.Replace("\n", "\r\n")).SystemInstruction);
         }
 
+        [Fact]
+        public void LoneCarriageReturnsAndBomAreNormalized()
+        {
+            string lf = ShippedRules.Replace("\r\n", "\n");
+            string expected = new PromptBuilder(lf).SystemInstruction;
+            Assert.Equal(expected, new PromptBuilder(lf.Replace("\n", "\r")).SystemInstruction);
+            Assert.Equal(expected, new PromptBuilder("﻿" + lf).SystemInstruction);
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]

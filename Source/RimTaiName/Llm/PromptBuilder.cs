@@ -30,7 +30,7 @@ namespace RimTaiName.Llm
 
         public PromptBuilder(string sharedRules)
         {
-            string text = (sharedRules ?? string.Empty).Replace("\r\n", "\n");
+            string text = (sharedRules ?? string.Empty).TrimStart('﻿').Replace("\r\n", "\n").Replace('\r', '\n');
             int split = text.IndexOf("\n" + ExamplesHeading, StringComparison.Ordinal);
             string rules = (split >= 0 ? text.Substring(0, split) : text).Trim('\n');
             string examples = split >= 0 ? text.Substring(split + 1).TrimEnd('\n') : string.Empty;
