@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace RimTaiName.Pipeline
 {
@@ -83,7 +84,7 @@ namespace RimTaiName.Pipeline
         /// <summary>A remote result is expected and has not been superseded by a restore.</summary>
         public bool AwaitingRemote => remoteGeneration == generation;
 
-        public string Opened(NameField field) => opened[(int)field];
+        public string Opened(NameField field) => opened[Index(field)];
 
         /// <summary>
         /// The request for the fields as they are now. A field the dialog does not let the player edit counts as
@@ -137,9 +138,11 @@ namespace RimTaiName.Pipeline
         {
             CheckCount(current, nameof(current));
             var writes = new FieldWrite[NameFields.Count];
-            if (remote == null || !AwaitingRemote)
+            if (!AwaitingRemote)
                 return writes;
-            remoteGeneration = -1;
+            remoteGeneration = -1; // also when the request ended without a result
+            if (remote == null)
+                return writes;
             for (int i = 0; i < NameFields.Count; i++)
             {
                 FieldResult result = remote.Fields[i];
@@ -157,8 +160,8 @@ namespace RimTaiName.Pipeline
             var writes = new FieldWrite[NameFields.Count];
             for (int i = 0; i < NameFields.Count; i++)
             {
-                if (!Locked[i] && opened[i] != null)
-                    writes[i] = new FieldWrite(opened[i], null, learnable: false);
+                if (!Locked[i])
+                    writes[i] = new FieldWrite(opened[i] ?? string.Empty, null, learnable: false);
             }
             return writes;
         }
@@ -168,21 +171,22 @@ namespace RimTaiName.Pipeline
         {
             if (write == null)
                 throw new ArgumentNullException(nameof(write));
-            int i = (int)field;
+            int i = Index(field);
             written[i] = write.Learnable ? write.Value : null;
             writtenSource[i] = write.Learnable ? write.SourceText : null;
         }
 
         /// <summary>
-        /// Called every frame: once the player replaces a translation with text that is not Chinese (rerolled or
-        /// retyped), a later Chinese value is no longer a correction of it.
+        /// Called every frame: once the player replaces a translation with another (English) name, by rerolling or
+        /// typing, a later Chinese value is no longer a correction of it. A box that is only emptied or holds
+        /// Bopomofo while the player types Chinese keeps the link.
         /// </summary>
         public void Observe(IReadOnlyList<string> current)
         {
             CheckCount(current, nameof(current));
             for (int i = 0; i < NameFields.Count; i++)
             {
-                if (written[i] != null && !NameSanitizer.ContainsChinese(current[i]))
+                if (written[i] != null && !NameSanitizer.ContainsChinese(current[i]) && HasNonCjkLetter(current[i]))
                 {
                     written[i] = null;
                     writtenSource[i] = null;
@@ -222,6 +226,30 @@ namespace RimTaiName.Pipeline
 
         private static bool IsLearnable(FieldSource source) =>
             source == FieldSource.PersonalCache || source == FieldSource.Dictionary || source == FieldSource.Api;
+
+        /// <summary>
+        /// A letter below the CJK blocks (U+2E80): Latin, accented Latin, Greek, Cyrillic and the like. Modifier
+        /// letters are excluded: the Bopomofo tone marks ˇ ˊ ˋ live there.
+        /// </summary>
+        private static bool HasNonCjkLetter(string text)
+        {
+            if (text == null)
+                return false;
+            foreach (char c in text)
+            {
+                if (c < '⺀' && char.IsLetter(c) && CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.ModifierLetter)
+                    return true;
+            }
+            return false;
+        }
+
+        private static int Index(NameField field)
+        {
+            int i = (int)field;
+            if (i < 0 || i >= NameFields.Count)
+                throw new ArgumentOutOfRangeException(nameof(field));
+            return i;
+        }
 
         private static bool SameText(string a, string b) => string.Equals(a ?? string.Empty, b ?? string.Empty, StringComparison.Ordinal);
 

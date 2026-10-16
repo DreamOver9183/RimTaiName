@@ -276,6 +276,48 @@ namespace RimTaiName.Tests.Pipeline
         }
 
         [Fact]
+        public void RetypingInChineseKeepsTheCorrection()
+        {
+            NameDialogSession session = Session();
+            string[] fields = { "Gisele", "Fox", "Miller" };
+            Apply(session, session.BeginTranslation(Result(Field(FieldSource.Unchanged, null, "Gisele"), Field(FieldSource.Unchanged, null, "Fox"),
+                                                           Field(FieldSource.Dictionary, "米勒", "Miller")), fields, false), fields);
+
+            foreach (string typing in new[] { "", "  ", "ㄇㄧˇ", "米樂" }) // select all, delete, then type with Bopomofo
+            {
+                fields[2] = typing;
+                session.Observe(fields);
+            }
+            Assert.Equal("米樂", Assert.Single(session.Corrections(fields)).Value);
+        }
+
+        [Fact]
+        public void RequestEndingWithoutAResultStopsWaiting()
+        {
+            NameDialogSession session = Session();
+            string[] fields = { "Zzyzx", "Fox", "Miller" };
+            session.BeginTranslation(Result(Pending("Zzyzx"), Field(FieldSource.Unchanged, null, "Fox"), Field(FieldSource.Unchanged, null, "Miller")), fields, true);
+
+            Assert.Equal(new string[3], Values(session.CompleteTranslation(null, fields)));
+            Assert.False(session.AwaitingRemote);
+        }
+
+        [Fact]
+        public void RestoreOfAnUnknownOpeningValueClearsTheField()
+        {
+            var session = new NameDialogSession("Gisele", null, "Miller", NickSource.Explicit);
+            Assert.Equal(string.Empty, session.Restore()[(int)NameField.Nick].Value);
+        }
+
+        [Fact]
+        public void UndefinedFieldIsRejected()
+        {
+            NameDialogSession session = Session();
+            Assert.Throws<ArgumentOutOfRangeException>(() => session.MarkWritten((NameField)3, new FieldWrite("吉賽兒", "Gisele", true)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => session.Opened((NameField)(-1)));
+        }
+
+        [Fact]
         public void WriteWithoutSourceTextIsNotLearnable()
         {
             Assert.False(new FieldWrite("吉賽兒", "  ", learnable: true).Learnable);
