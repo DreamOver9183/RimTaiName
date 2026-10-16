@@ -122,6 +122,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   `CharacterCardUtility.ValidNameRegex` 擋 `·`、`・` 與 CJK 擴充 B 以後的字（代理對、長度算 2）。
 *   Mod 設定檔名是 `Mod_<資料夾名>_<Mod 類別>.xml`：junction 開發版與 Workshop 版的設定不互通。
 *   `Listing_Standard.TextEntry` 沒有長度上限參數，要用 `Widgets.TextField(rect, text, maxLength)`。
+*   **`Verse.Listing` 會自動開新欄：** `GetRect` 在內容超過清單高度時把 `curX` 右移一欄（`NewColumnIfNeeded`），畫在可視範圍外，`CurHeight` 也變成新欄的高度。放在捲動區裡的 Listing 一定要設 `maxOneColumn = true`；否則以「上一幀 CurHeight」當捲動高度時，某一幀變高就會讓整頁永久塌陷（Step 1 實測：儲存金鑰後設定頁下半部消失）。
+*   設定頁每個區塊各自 try/catch／finally：記錄一次例外，並還原 `GUI.color`、`Text.Font`、`Text.Anchor`；最外層 finally 一定要 `list.End()`、`Widgets.EndScrollView()`，否則 IMGUI 群組失衡會讓整個視窗異常。
 *   Mono 的 `ProtectedData` 在 macOS／Linux 會靜默改用 ManagedProtection，不會丟例外。
 
 ### Gemini Interactions API
