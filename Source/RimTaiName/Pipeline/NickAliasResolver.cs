@@ -26,6 +26,8 @@ namespace RimTaiName.Pipeline
         /// </summary>
         public static NameField? Target(NameRequestPayload payload)
         {
+            if (payload == null)
+                throw new ArgumentNullException(nameof(payload));
             if (payload.Locked[(int)NameField.Nick])
                 return null;
             string nick = payload[NameField.Nick];
@@ -39,17 +41,30 @@ namespace RimTaiName.Pipeline
                     return NameField.Last;
                 return null;
             }
-            // A nickname still equal to the English first/last name (now or as opened) is that name.
-            if (Same(nick, payload[NameField.First]) || Same(nick, payload.OriginalText[(int)NameField.First]))
+            if (Mirrors(payload, nick, NameField.First))
                 return NameField.First;
-            if (Same(nick, payload[NameField.Last]) || Same(nick, payload.OriginalText[(int)NameField.Last]))
+            if (Mirrors(payload, nick, NameField.Last))
                 return NameField.Last;
             return null;
         }
 
+        /// <summary>
+        /// The nickname stands for <paramref name="field"/> when it equals that field's English text now, or
+        /// equals the text as opened while the field has since been translated to Chinese. A field rerolled to
+        /// another English name no longer counts: the old nickname is then a nickname of its own.
+        /// </summary>
+        private static bool Mirrors(NameRequestPayload payload, string nick, NameField field)
+        {
+            string current = payload[field];
+            if (Same(nick, current))
+                return true;
+            return NameSanitizer.ContainsChinese(current) && Same(nick, payload.OriginalText[(int)field]);
+        }
+
         private static bool IsBlank(string text) => string.IsNullOrWhiteSpace(text);
 
+        /// <summary>Same name after Trim, NFC and lower case (NameKey), so "André" in NFD still matches.</summary>
         private static bool Same(string a, string b) =>
-            !IsBlank(a) && !IsBlank(b) && string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
+            !IsBlank(a) && !IsBlank(b) && string.Equals(NameKey.Normalize(a), NameKey.Normalize(b), StringComparison.Ordinal);
     }
 }

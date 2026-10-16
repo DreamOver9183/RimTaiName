@@ -49,7 +49,15 @@ namespace RimTaiName.Pipeline
             if (client == null)
                 throw new ArgumentNullException(nameof(client));
 
-            var request = new LlmRequest { NickSource = payload.NickSource };
+            // Describe the nickname as resolved for this request, not as it was when the dialog opened:
+            // a nickname the player retyped is translated on its own even if it used to be an alias.
+            NameField? aliasOf = local[NameField.Nick].AliasOf;
+            var request = new LlmRequest
+            {
+                NickSource = aliasOf == NameField.First ? NickSource.AliasOfFirst
+                    : aliasOf == NameField.Last ? NickSource.AliasOfLast
+                    : NickSource.Explicit,
+            };
             bool anyWanted = false;
             foreach (NameField field in NameFields.All)
             {

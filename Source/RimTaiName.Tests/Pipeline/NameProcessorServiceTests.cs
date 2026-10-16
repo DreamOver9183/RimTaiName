@@ -184,6 +184,33 @@ namespace RimTaiName.Tests.Pipeline
         }
 
         [Fact]
+        public void RerolledEnglishNameMakesTheOldNicknameIndependent()
+        {
+            // Opened as Gisele "Gisele" Miller, then the first name was rerolled to another English name.
+            var payload = new NameRequestPayload("Gisele", "Gisele", "Miller") { NickSource = NickSource.AliasOfFirst };
+            payload.Text[(int)NameField.First] = "Anna";
+            NameResult result = service.ResolveLocal(payload);
+            AssertField(result, NameField.First, FieldSource.Dictionary, "安娜");
+            AssertField(result, NameField.Nick, FieldSource.Pending, null);
+            Assert.Null(result[NameField.Nick].AliasOf);
+        }
+
+        [Fact]
+        public void AliasComparisonIgnoresUnicodeNormalizationForm()
+        {
+            NameResult result = service.ResolveLocal(Payload("Zoë", "Zoë", "Miller"));
+            Assert.Equal(NameField.First, result[NameField.Nick].AliasOf);
+        }
+
+        [Fact]
+        public void NullArgumentsAreRejected()
+        {
+            Assert.Throws<ArgumentNullException>(() => NickAliasResolver.Target(null));
+            var ok = new FieldResult(FieldSource.Unchanged, null, "x");
+            Assert.Throws<ArgumentNullException>(() => new NameResult(ok, null, ok));
+        }
+
+        [Fact]
         public void AliasMirrorsALockedChineseField()
         {
             var payload = new NameRequestPayload("Gisele", "Gisele", "Miller");
@@ -252,6 +279,17 @@ namespace RimTaiName.Tests.Pipeline
             Assert.Equal(CacheOrigin.Api, origin);
             Assert.True(cache.TryGet(NameSpace.Nick, "mad dog", out string nick, out _));
             Assert.Equal("瘋狗", nick);
+        }
+
+        [Theory]
+        [InlineData("", NickSource.AliasOfFirst)]         // blank alias nickname waits for the first name
+        [InlineData("Mad Dog", NickSource.Explicit)]      // retyped by the player: translated on its own
+        public async Task RequestDescribesTheNicknameAsResolvedNow(string nick, NickSource expected)
+        {
+            var client = new FakeClient(LlmResponse.Ok("佐吉克斯", "瘋狗", null));
+            NameRequestPayload payload = Payload("Zzyzx", nick, "Miller", NickSource.AliasOfFirst);
+            await service.ResolveRemoteAsync(payload, service.ResolveLocal(payload), client, Ct);
+            Assert.Equal(expected, Assert.Single(client.Requests).NickSource);
         }
 
         [Fact]

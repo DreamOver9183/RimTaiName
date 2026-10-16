@@ -125,7 +125,12 @@ namespace RimTaiName.Pipeline
         public NameResult(FieldResult first, FieldResult nick, FieldResult last,
                           GeminiErrorKind remoteError = GeminiErrorKind.None, int remoteStatusCode = 0, string remoteDetail = null)
         {
-            fields = new[] { first, nick, last };
+            fields = new[]
+            {
+                first ?? throw new ArgumentNullException(nameof(first)),
+                nick ?? throw new ArgumentNullException(nameof(nick)),
+                last ?? throw new ArgumentNullException(nameof(last)),
+            };
             RemoteError = remoteError;
             RemoteStatusCode = remoteStatusCode;
             RemoteDetail = remoteDetail;
