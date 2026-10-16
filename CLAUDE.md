@@ -64,7 +64,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | 建置（typecheck） | `dotnet build Source/RimTaiName/RimTaiName.csproj -c Release -warnaserror` |
 | C# lint | `dotnet format Source/RimTaiName/RimTaiName.csproj --verify-no-changes`（測試專案同理） |
 | 單元測試 | `dotnet test --project Source/RimTaiName.Tests`（Microsoft.Testing.Platform，由根目錄 `global.json` 啟用） |
-| 即時 API 測試 | `$env:RIMTAINAME_KEY_FILE = (Resolve-Path RimTaiName_KEY_01.txt).Path; dotnet test --project Source/RimTaiName.Tests --filter-trait "Category=Live"`，跑完 `Remove-Item Env:RIMTAINAME_KEY_FILE`。每次用掉約 4 次請求額度；未設環境變數時這些測試自動略過 |
+| 即時 API 測試 | `$env:RIMTAINAME_KEY_FILE = (Resolve-Path RimTaiName_KEY_01.txt).Path; dotnet test --project Source/RimTaiName.Tests --filter-trait "Category=Live"; $env:RIMTAINAME_KEY_FILE = $null`。每次用掉約 4 次請求額度；未設環境變數時這些測試自動略過 |
 | Python 語法檢查 | `python -I -m py_compile Tools/<file>.py`（沒有安裝 ruff／pyflakes） |
 | PowerShell 語法檢查 | `[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)`（沒有 PSScriptAnalyzer） |
 | 打包 | `powershell -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（Step 1 建立） |
@@ -101,6 +101,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **插入工具列：** Transpiler 以 `CodeMatcher` 找 `rectAggregator.NewRow(17.5f)`，在前面插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；找不到時只停用工具列。
 *   **設定檔類寫入：** 先寫 `<path>.tmp`，目標存在時 `File.Replace(temp, path, null)`、否則 `File.Move`，`finally` 刪除殘留的暫存檔。讀檔失敗時從空狀態開始，不讓 Mod 載入中斷。
 *   **可測試的 HTTP 用戶端：** 正式建構子建立 `HttpClientHandler { AllowAutoRedirect = false }`；`internal` 建構子注入 `HttpMessageHandler`、逾時與重試延遲，測試用假 handler（延遲要尊重 `CancellationToken`，否則 HttpClient 逾時測不到）。
+*   **給玩家或記錄的錯誤細節：** 先遮蔽金鑰、再截斷（Gemini 為 200 字）；截斷點落在高代理字元時往前退一格，不切斷代理對。錯誤 JSON 沒有 `message` 時改用原始回應內容。
 *   **字典產生：** Python 工具鏈 `extract_vanilla_names.py` → `build_full_input.py` → `agy_translate.py` → `merge_dictionary.py`；人工修正寫在 `NameTable/translations/` 的 CSV，不直接改 TSV。
 
 ---
@@ -120,7 +121,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 ### Gemini Interactions API
 *   `response_format` 是 `{"type":"text","mime_type":"application/json","schema":{…}}`，schema 不能直接放。
 *   回應在 `steps[]`，要找 `type == "model_output"`（前面可能有 `thought`），且 `status == "completed"`。
-*   錯誤 `code` 是 snake_case **字串**；`models.get` 等舊 API 是數字 code ＋ `status`。429 分 `quota_exceeded`（每日）與 `rate_limit_exceeded`（每分鐘）。
+*   錯誤 `code` 是 snake_case **字串**；`models.get` 等舊 API 是數字 code ＋ `status`。429 分 `quota_exceeded`（每日，不分大小寫比對）與 `rate_limit_exceeded`（每分鐘）。舊 API 的 `RESOURCE_EXHAUSTED` 兩種限制都會用，**不能**當成每日額度；只有訊息含 `PerDay`／`per day` 時才算。
+*   2026-10-16 即時測試確認：`AQ.` 金鑰可用 `x-goog-api-key` 呼叫 Interactions；`response_format` 的 schema 會被遵守；錯誤金鑰回 401、未知模型回 404。
 *   `temperature`／`top_p`／`top_k` 已棄用，未來模型會回 400；flash-lite 預設 `thinking_level = minimal`。
 
 ### 測試與審查流程
@@ -130,6 +132,11 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   本帳號 Copilot 審查額度已用完：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
 *   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
 *   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach <tmp> <branch>`），避免工作區中下一個單元的未追蹤檔案混入。
+*   多個 PR 平行審查時，切換分支會讓「已提交在別的分支」的檔案從工作區消失；回頭修前一個 PR 前，先 `git stash push --include-untracked -- <後續單元的路徑>`，修完、合併後再 `git stash pop`。
+*   本 session 的工具不允許 `Remove-Item Env:<名稱>`（會被誤判成刪除路徑）；清除環境變數用 `$env:<名稱> = $null`。
+
+### C#／Mono 相容
+*   字串解析器在呼叫 `string.CompareOrdinal(a, i, b, j, len)` 前先檢查剩餘長度：.NET 10 會自動截短比較，Mono 可能直接丟 `ArgumentOutOfRangeException`，測試抓不到差異。
 
 ### 工具與環境
 *   `agy` 逾時時仍回傳 SUCCESS，但回應是空的；要檢查 `structured_output` 是否存在。
