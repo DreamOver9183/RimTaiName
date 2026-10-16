@@ -72,6 +72,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | 金鑰稽核（測試機） | 把 `Tools/audit_key_leak.ps1` 複製到測試機，在 **PowerShell**（不是 cmd）執行 `powershell -NoProfile -ExecutionPolicy Bypass -File audit_key_leak.ps1`；結束碼 0 乾淨、1 找到金鑰、2 找不到資料夾、3 有檔案讀不到。自我測試：`Tools/test_audit_key_leak.ps1`（13 個情境） |
 | 打包腳本自我測試 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/test_package_mod.ps1`（改動打包腳本時執行，11 個情境） |
 | 重新產生字典 | `python -I Tools/merge_dictionary.py` |
+| 規則一致性 fixture | `python -I Tools/export_rule_fixtures.py` → `Source/RimTaiName.Tests/Fixtures/rules.tsv`。改 `name_rules.py` 或重新產生字典後都要重跑，再 `dotnet test` 確認 C# 的 `NameKey`／`SpecialFormRule`／`NameSanitizer.Check` 與 Python 逐筆一致 |
 | 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
 | PR 自動審查 | `python -I Tools/agy_review.py <PR#> --post` |
 | 遊戲記錄 | 開發機 `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Player.log` |
@@ -140,6 +141,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   即時測試用 `Assert.SkipWhen`／`Assert.SkipUnless`（xunit.v3）在沒有金鑰時略過，並以 `[Trait("Category", "Live")]` 標記。
 *   本帳號 Copilot 審查額度已用完：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
 *   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
+*   推送修正後立刻 `gh pr merge` 可能回報「Base branch was modified」；這是 GitHub 還在重算合併狀態，稍候重試即可，合併前確認 squash 內容含最新 commit。
 *   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach <tmp> <branch>`），避免工作區中下一個單元的未追蹤檔案混入。
 *   多個 PR 平行審查時，切換分支會讓「已提交在別的分支」的檔案從工作區消失；回頭修前一個 PR 前，先 `git stash push --include-untracked -- <後續單元的路徑>`，修完、合併後再 `git stash pop`。
 *   本 session 的工具不允許 `Remove-Item Env:<名稱>`（會被誤判成刪除路徑）；清除環境變數用 `$env:<名稱> = $null`。
@@ -153,6 +155,12 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   PowerShell 5.1 呼叫外部程式時會**丟掉空字串參數**（`-X ''` 變成缺少參數值），測試「空值」要用空白字串。
 *   掃描可能很大的檔案（`Player.log` 可達數百 MB）要分塊串流讀取，區塊間保留重疊以免漏掉跨邊界的樣式，並只解碼實際讀到的位元組；開檔用 `FileShare.ReadWrite | Delete`，不妨礙遊戲寫入與輪替 log。
 *   給使用者手動執行的單行指令容易在 cmd 執行或碰到資料夾而報錯；需要可靠結果時改成附自我測試的腳本。
+
+### 名字規則（C# 與 Python 雙實作）
+*   規則同時存在於 `Tools/name_rules.py`（字典產生）與 `Pipeline/`（遊戲內），任何一邊改了都要同步另一邊並重跑 fixture。中文字元範圍兩邊都是 U+3400–U+4DBF、U+4E00–U+9FFF（不含中間的易經卦符）。
+*   `NameSanitizer.Check` 只對應 Python 的三種「不合格」；`Sanitize` 是寫入前的清理（去標點符號、檢查遊戲 regex），所有來源的譯名都要經過它。
+*   .NET 正規表示式的 `$` 會匹配結尾換行之前的位置，要求整串時用 `\z`。
+*   `string.Normalize` 遇到孤立代理字元會丟 `ArgumentException`；一律經 `TextNormalization.Normalize`。
 
 ### C#／Mono 相容
 *   字串解析器在呼叫 `string.CompareOrdinal(a, i, b, j, len)` 前先檢查剩餘長度：.NET 10 會自動截短比較，Mono 可能直接丟 `ArgumentOutOfRangeException`，測試抓不到差異。
