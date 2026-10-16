@@ -82,27 +82,37 @@ namespace RimTaiName.Pipeline
                             if (line == Header)
                                 continue;
                         }
-                        if (line.Length == 0)
+                        if (string.IsNullOrWhiteSpace(line))
                             continue;
                         string[] fields = line.Split('\t');
-                        if (fields.Length != 3 || !NameSpaces.TryParse(fields[0], out NameSpace ns) ||
-                            fields[1].Length == 0 || fields[2].Length == 0)
+                        if (fields.Length != 3 || !NameSpaces.TryParse(fields[0], out NameSpace ns))
                         {
                             skippedLines++;
                             continue;
                         }
-                        // Normalize again so a hand-edited key still matches lookups.
-                        string composite = Compose(ns, NameKey.Normalize(fields[1]));
+                        // Normalize again so a hand-edited key still matches lookups; blank keys or values
+                        // would be unreachable entries or would shadow a valid duplicate further down.
+                        string key = NameKey.Normalize(fields[1]);
+                        string value = fields[2].Trim();
+                        if (key.Length == 0 || value.Length == 0)
+                        {
+                            skippedLines++;
+                            continue;
+                        }
+                        string composite = Compose(ns, key);
                         if (map.ContainsKey(composite))
                             skippedLines++;
                         else
-                            map.Add(composite, fields[2]);
+                            map.Add(composite, value);
                     }
                 }
             }
-            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is System.Security.SecurityException)
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                      e is System.Security.SecurityException || e is ArgumentException || e is NotSupportedException)
             {
+                // Including an empty or malformed path: the contract is "empty dictionary plus LoadError", never a throw.
                 loadError = e.GetType().Name + ": " + e.Message;
+                skippedLines = 0;
                 map.Clear();
             }
             return map;

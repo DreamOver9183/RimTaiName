@@ -99,6 +99,34 @@ namespace RimTaiName.Tests.Pipeline
         }
 
         [Fact]
+        public void BlankKeysAndValuesDoNotShadowValidEntries()
+        {
+            BuiltInDictionary dictionary = FromText(
+                BuiltInDictionary.Header + "\n" +
+                "name\t   \t安娜\n" +          // blank key
+                "name\tanna\t   \n" +          // blank value must not hide the next line
+                "name\tanna\t 安娜 \n" +        // value is trimmed
+                " \t \n" +                     // whitespace-only line counts as empty
+                "nick\tfox\t狐狸\n");
+            Assert.Equal(2, dictionary.Count);
+            Assert.Equal(2, dictionary.SkippedLines);
+            Assert.True(dictionary.TryGet(NameSpace.Name, "anna", out string anna));
+            Assert.Equal("安娜", anna);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("bad\0path.tsv")]
+        public void InvalidPathGivesEmptyDictionaryInsteadOfThrowing(string path)
+        {
+            var dictionary = new BuiltInDictionary(path);
+            Assert.False(dictionary.TryGet(NameSpace.Name, "anna", out _));
+            Assert.Equal(0, dictionary.Count);
+            Assert.Equal(0, dictionary.SkippedLines);
+            Assert.NotNull(dictionary.LoadError);
+        }
+
+        [Fact]
         public void HandlesBomAndHandEditedKeys()
         {
             BuiltInDictionary dictionary = FromText(BuiltInDictionary.Header + "\nname\t  André \t安德烈\n", new UTF8Encoding(true));
