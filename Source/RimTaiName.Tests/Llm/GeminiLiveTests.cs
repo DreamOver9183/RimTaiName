@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using RimTaiName.Llm;
+using RimTaiName.Pipeline;
 using Xunit;
 
 namespace RimTaiName.Tests.Llm
@@ -80,6 +81,44 @@ namespace RimTaiName.Tests.Llm
             Assert.NotNull(names);
             foreach (string field in new[] { "first", "nick", "last" })
                 Assert.False(string.IsNullOrWhiteSpace(MiniJson.GetString(names, field)), field);
+        }
+
+        [Fact]
+        public async Task TranslatesUnknownNamesThroughThePipeline()
+        {
+            string key = ReadKey();
+            string dir = Path.Combine(Path.GetTempPath(), "rimtainame_live_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                var cache = new PersonalNameCache(Path.Combine(dir, "cache.xml"));
+                cache.Load();
+                var dictionary = new BuiltInDictionary(Path.Combine(AppContext.BaseDirectory, "Data", "BaseNames_zhTW.tsv"));
+                var service = new NameProcessorService(dictionary, cache);
+                var prompts = new PromptBuilder(PromptBuilder.LoadRules(Path.Combine(AppContext.BaseDirectory, "Data", PromptBuilder.RulesFileName), out _));
+                var translator = new GeminiNameTranslator(new GeminiInteractionsClient(() => key), prompts, () => Model);
+
+                // Invented words that are not in the dictionary, so all three go to Gemini.
+                var payload = new NameRequestPayload("Zorbalith", "Quickfang", "Vexmoor");
+                NameResult local = service.ResolveLocal(payload);
+                Assert.All(local.Fields, f => Assert.Equal(FieldSource.Pending, f.Source));
+                NameResult result = await service.ResolveRemoteAsync(payload, local, translator, Ct);
+
+                // Never Assert.Contains/DoesNotContain with the real key: a failure message would print it.
+                Assert.True(result.RemoteDetail == null || !result.RemoteDetail.Contains(key), "key leaked into RemoteDetail");
+                Assert.Equal(GeminiErrorKind.None, result.RemoteError);
+                foreach (FieldResult field in result.Fields)
+                {
+                    Assert.Equal(FieldSource.Api, field.Source);
+                    Assert.True(NameSanitizer.ContainsChinese(field.Value), field.Value);
+                    Assert.True(!field.Value.Contains(key), "key leaked into a translated value");
+                }
+                Assert.Equal(3, cache.Count);
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
         }
 
         [Fact]
