@@ -61,15 +61,40 @@ namespace RimTaiName.Core
                 modelBuffer = settings.modelId;
             var view = new Rect(0f, 0f, inRect.width - 16f, viewHeight);
             Widgets.BeginScrollView(inRect, ref scroll, view);
-            var list = new Listing_Standard();
+            // Listing starts a new column off to the right whenever content outgrows its rect. With the view
+            // height taken from the previous frame, one taller frame would collapse the page for good, so the
+            // listing must stay a single column and let the scroll view grow instead.
+            var list = new Listing_Standard { maxOneColumn = true };
             list.Begin(view);
-            DrawKeySection(list, settings, gemini);
-            DrawModelSection(list, settings);
-            DrawCacheSection(list, cache);
-            DrawPrivacySection(list);
-            viewHeight = list.CurHeight + 20f;
-            list.End();
-            Widgets.EndScrollView();
+            try
+            {
+                // Each section is isolated: one failing section is logged once and the rest still draws.
+                DrawSection("key", 0x52544e10, () => DrawKeySection(list, settings, gemini));
+                DrawSection("model", 0x52544e11, () => DrawModelSection(list, settings));
+                DrawSection("cache", 0x52544e12, () => DrawCacheSection(list, cache));
+                DrawSection("privacy", 0x52544e13, () => DrawPrivacySection(list));
+                viewHeight = Mathf.Max(list.CurHeight + 20f, 100f);
+            }
+            finally
+            {
+                // Always unwind the GUI groups, or IMGUI clipping breaks for the whole window.
+                Text.Font = GameFont.Small;
+                GUI.color = Color.white;
+                list.End();
+                Widgets.EndScrollView();
+            }
+        }
+
+        private static void DrawSection(string name, int logKey, Action draw)
+        {
+            try
+            {
+                draw();
+            }
+            catch (Exception e)
+            {
+                ModLog.ErrorOnce($"settings section '{name}' failed: {e}", logKey);
+            }
         }
 
         /// <summary>Called when the settings window closes: forget typed text, re-mask the key, stop a running test.</summary>
