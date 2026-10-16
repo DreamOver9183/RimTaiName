@@ -75,11 +75,27 @@ namespace RimTaiName.Tests.Llm
         }
 
         [Fact]
-        public void NegativeIntervalIsTreatedAsZero()
+        public void IntervalIsClampedToZeroThroughOneHour()
         {
             RequestGate gate = Gate(0);
             gate.MinInterval = TimeSpan.FromSeconds(-5);
             Assert.Equal(TimeSpan.Zero, gate.MinInterval);
+            gate.MinInterval = TimeSpan.MaxValue;
+            Assert.Equal(TimeSpan.FromHours(1), gate.MinInterval);
+            gate.TryEnter(out _, out _).Dispose();
+            Assert.Null(gate.TryEnter(out GateDenial denial, out TimeSpan wait)); // no overflow
+            Assert.Equal(GateDenial.TooSoon, denial);
+            Assert.Equal(TimeSpan.FromHours(1), wait);
+        }
+
+        [Fact]
+        public void ClockJumpingBackwardsDoesNotLockTheGate()
+        {
+            RequestGate gate = Gate(3);
+            gate.TryEnter(out _, out _).Dispose();
+            now = now.AddHours(-2);
+            Assert.NotNull(gate.TryEnter(out GateDenial denial, out _));
+            Assert.Equal(GateDenial.None, denial);
         }
 
         [Fact]

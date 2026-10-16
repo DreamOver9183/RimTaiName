@@ -104,12 +104,14 @@ namespace RimTaiName.Tests.Llm
                 Assert.All(local.Fields, f => Assert.Equal(FieldSource.Pending, f.Source));
                 NameResult result = await service.ResolveRemoteAsync(payload, local, translator, Ct);
 
+                // Never Assert.Contains/DoesNotContain with the real key: a failure message would print it.
+                Assert.True(result.RemoteDetail == null || !result.RemoteDetail.Contains(key), "key leaked into RemoteDetail");
                 Assert.Equal(GeminiErrorKind.None, result.RemoteError);
                 foreach (FieldResult field in result.Fields)
                 {
                     Assert.Equal(FieldSource.Api, field.Source);
                     Assert.True(NameSanitizer.ContainsChinese(field.Value), field.Value);
-                    Assert.DoesNotContain(key, field.Value);
+                    Assert.True(!field.Value.Contains(key), "key leaked into a translated value");
                 }
                 Assert.Equal(3, cache.Count);
             }

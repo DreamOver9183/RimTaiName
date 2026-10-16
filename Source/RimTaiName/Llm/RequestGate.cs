@@ -37,6 +37,7 @@ namespace RimTaiName.Llm
             this.utcNow = utcNow ?? (() => DateTime.UtcNow);
         }
 
+        /// <summary>Clamped to 0–1 hour.</summary>
         public TimeSpan MinInterval
         {
             get
@@ -47,9 +48,11 @@ namespace RimTaiName.Llm
             set
             {
                 lock (sync)
-                    minInterval = value < TimeSpan.Zero ? TimeSpan.Zero : value;
+                    minInterval = value < TimeSpan.Zero ? TimeSpan.Zero : value > MaxInterval ? MaxInterval : value;
             }
         }
+
+        private static readonly TimeSpan MaxInterval = TimeSpan.FromHours(1);
 
         public bool IsBusy
         {
@@ -75,7 +78,12 @@ namespace RimTaiName.Llm
                     return null;
                 }
                 DateTime now = utcNow();
-                TimeSpan remaining = lastStartUtc == DateTime.MinValue ? TimeSpan.Zero : lastStartUtc + minInterval - now;
+                // Elapsed time rather than lastStart + interval: no DateTime overflow, and a clock that jumped
+                // backwards (elapsed < 0) does not lock the gate until it catches up.
+                TimeSpan elapsed = now - lastStartUtc;
+                TimeSpan remaining = lastStartUtc == DateTime.MinValue || elapsed < TimeSpan.Zero
+                    ? TimeSpan.Zero
+                    : minInterval - elapsed;
                 if (remaining > TimeSpan.Zero)
                 {
                     denial = GateDenial.TooSoon;
