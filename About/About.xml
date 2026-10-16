@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>RimTaiName (Dev)</name>
-  <author>RimTaiName</author>
-  <packageId>RimTaiName.Dev</packageId>
+  <name>邊緣臺名 RimTaiName</name>
+  <author>DreamOver9183</author>
+  <packageId>DreamOver9183.RimTaiName</packageId>
+  <modVersion>1.0.0</modVersion>
+  <url>https://github.com/DreamOver9183/RimTaiName</url>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -17,5 +19,16 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>RimTaiName 開發版（Step 0 技術驗證）。為命名視窗加上鎖頭與工具列，並測試遊戲內的 HTTPS 連線。</description>
+  <description>把小人的英文姓名翻成臺灣繁體中文。
+
+在角色資訊卡按改名，視窗會多出：
+• 每一列的鎖頭：鎖住的欄位不會被更改。
+• 「翻譯姓名」：原版名字全部由內建字典離線翻譯，不需要任何金鑰；其他 Mod 或手打的名字可送 Gemini API 翻譯（需要你自己的免費 API Key）。
+• 「生成中文名」：依性別、背景故事、文化與異種族取一個新的中文名（需要 API Key）。
+• 「還原」：未鎖定的欄位恢復為開窗時的內容。
+你修改過的譯名會被記住，之後同名的小人會優先使用。
+
+API Key 在「選項 → Mod 設定 → 邊緣臺名」設定；Windows 上以 DPAPI 加密保存，不會寫進存檔或 Mod 設定檔。只有在你按下按鈕時才會把姓名送往 Google Gemini。不新增任何存檔資料，可以隨時加入或移除。
+
+Translates pawn names into Traditional Chinese (Taiwan). Vanilla names are translated offline from a built-in dictionary with no API key; names from other mods, typed names and the "Generate name" button use the Google Gemini API with your own free API key. Lock icons keep fields unchanged; your corrections are remembered. Adds nothing to save files.</description>
 </ModMetaData>
