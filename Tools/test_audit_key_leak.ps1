@@ -40,7 +40,22 @@ $cases = @(
         [System.IO.File]::WriteAllBytes($hidden, [System.Text.Encoding]::Unicode.GetBytes("xx$fakeAq"))
         [System.IO.File]::SetAttributes($hidden, [System.IO.FileAttributes]::Hidden)
     } },
+    @{ Name = 'utf16 odd offset'; Expect = 1; Setup = {
+        param($r)
+        [System.IO.File]::WriteAllBytes((Join-Path $r 'Config\odd.bin'), [byte[]]@(0) + [System.Text.Encoding]::Unicode.GetBytes($fakeAiza))
+    } },
+    @{ Name = 'key across chunk border'; Expect = 1; Arguments = @('-ChunkBytes', '1024'); Setup = {
+        param($r)
+        # The key starts 20 bytes before the first 1024-byte chunk ends.
+        Write-Text (Join-Path $r 'Player.log') (('.' * 1004) + $fakeAq + ('.' * 3000))
+    } },
+    @{ Name = 'clean multi-chunk log'; Expect = 0; Arguments = @('-ChunkBytes', '1024'); Setup = {
+        param($r)
+        Write-Text (Join-Path $r 'Player.log') ('[RimTaiName] line' * 2000)
+    } },
     @{ Name = 'missing data folder'; Missing = $true; Expect = 2; Setup = { param($r) } },
+    # PowerShell 5.1 drops '' when calling a native program, so a blank string stands in for "empty".
+    @{ Name = 'blank data folder arg'; Blank = $true; Expect = 2; Setup = { param($r) } },
     @{ Name = 'locked log'; Lock = 'Player.log'; Expect = 3; Setup = { param($r) } }
 )
 
@@ -48,18 +63,23 @@ $failed = 0
 try {
     foreach ($case in $cases) {
         $folder = if ($case.Folder) { $case.Folder } else { $case.Name -replace '\W', '_' }
-        $root = if ($case.Missing) { Join-Path $work 'does_not_exist' } else { New-DataDir $folder }
+        $root = if ($case.Missing) { Join-Path $work 'does_not_exist' } elseif ($case.Blank) { '   ' } else { New-DataDir $folder }
         & $case.Setup $root
+        $extra = if ($case.Arguments) { $case.Arguments } else { @() }
         $lock = $null
-        if ($case.Lock) {
-            $lock = New-Object System.IO.FileStream((Join-Path $root $case.Lock), [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+        try {
+            if ($case.Lock) {
+                $lock = New-Object System.IO.FileStream((Join-Path $root $case.Lock), [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+            }
+            # PowerShell 5.1 turns a child's stderr into error records; with 'Stop' they would abort this script.
+            $ErrorActionPreference = 'Continue'
+            $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $script -DataDir $root @extra 2>&1 | Out-String
+            $code = $LASTEXITCODE
         }
-        # PowerShell 5.1 turns a child's stderr into error records; with 'Stop' they would abort this script.
-        $ErrorActionPreference = 'Continue'
-        $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $script -DataDir $root 2>&1 | Out-String
-        $code = $LASTEXITCODE
-        $ErrorActionPreference = 'Stop'
-        if ($lock) { $lock.Dispose() }
+        finally {
+            $ErrorActionPreference = 'Stop'
+            if ($lock) { $lock.Dispose() }
+        }
         # The report may name files but must never echo the key itself.
         $echoed = $output.Contains($fakeAiza) -or $output.Contains($fakeAq)
         $ok = ($code -eq $case.Expect) -and -not $echoed
