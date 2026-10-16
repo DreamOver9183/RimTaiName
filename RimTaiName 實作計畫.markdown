@@ -31,6 +31,11 @@
   - 與原計畫的差異：`ProcessMode.Generate` 暫時丟 `NotSupportedException`（Step 6 實作）；別名只在對應欄位已是中文時才比對開窗時的英文
   - Mono 執行期的 Unicode 正規化仍待 Step 4 在遊戲內驗證（André、ＭＪ）
 - [ ] Step 3：Gemini 翻譯請求
+  - [x] 共用規則檔 `Prompts/NameRules_zhTW.txt`、`name_rules.py` 改讀規則檔（提示逐字不變）、`PromptBuilder`（PR #11）
+  - [x] `GeminiNameTranslator`（實作 `ILlmClient`）與 `RequestGate`；即時測試：三個字典沒有的名字經整條管線實際翻譯成功（PR #12）
+  - [x] 接進 Mod、`UiJob`、測試連線經請求限制、開發者模式的「翻譯測試」（PR #13）
+  - [ ] 遊戲內驗證：開發者翻譯測試、請求限制、金鑰稽核
+  - 與原計畫的差異：`TranslateAsync` 放在獨立的 `GeminiNameTranslator`（傳輸與翻譯語意分開）；新增 `Core/UiJob<T>` 供設定頁與 Step 4 共用
 - [ ] Step 4：命名視窗正式版（MVP 完成）
 - [ ] Step 5：字典 v1.0
 - [ ] Step 6：第二階段（生成中文名）
