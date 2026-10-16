@@ -39,7 +39,7 @@ namespace RimTaiName.Pipeline
         public static int MaxLength(NameSpace ns) => ns == NameSpace.Nick ? MaxNickLength : MaxNameLength;
 
         /// <summary>
-        /// Mirrors name_rules.check(): Blank, NonChinese (any character outside U+3400–U+9FFF that is not a
+        /// Mirrors name_rules.check(): Blank, NonChinese (any character that is neither a CJK ideograph nor a
         /// capital letter of the NFKC source) and TooLong. Kept identical to Python for the fixture test.
         /// </summary>
         public static NameCheck Check(string source, string translation, NameSpace ns)
@@ -50,7 +50,7 @@ namespace RimTaiName.Pipeline
             HashSet<char> capitals = SourceCapitals(source);
             foreach (char c in translation)
             {
-                if (!(c >= '㐀' && c <= '鿿') && !capitals.Contains(c))
+                if (!IsCjkIdeograph(c) && !capitals.Contains(c))
                 {
                     result |= NameCheck.NonChinese;
                     break;

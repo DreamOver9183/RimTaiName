@@ -51,6 +51,7 @@ EDGE_CASES = [
     ('Kim', 'name', '金 '),               # spaces are not allowed
     ('Haruka', 'name', 'はるか'),         # kana are not allowed
     ('Kim', 'name', '\U0002000b'),        # CJK Extension B (surrogate pair in C#)
+    ('Kim', 'name', '金䷀'),           # Yijing hexagram symbol between Extension A and the main block
 ]
 
 
@@ -66,8 +67,8 @@ def row(text, namespace, zh, origin):
 
 def main():
     sys.stdout.reconfigure(encoding='utf-8')
-    rows = [row(r['text'], r['namespace'], r['final_zh'], 'dict')
-            for r in csv.DictReader(open(DRAFT, encoding='utf-8-sig'))]
+    with open(DRAFT, encoding='utf-8-sig') as f:
+        rows = [row(r['text'], r['namespace'], r['final_zh'], 'dict') for r in csv.DictReader(f)]
     rows += [row(text, ns, zh, 'edge') for text, ns, zh in EDGE_CASES]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w', encoding='utf-8', newline='\n') as f:

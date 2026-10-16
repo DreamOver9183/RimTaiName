@@ -71,10 +71,15 @@ def special_form(text, namespace):
     return None
 
 
+def is_cjk(c):
+    """CJK Extension A and Unified Ideographs; the Yijing hexagram symbols in between are excluded."""
+    return '㐀' <= c <= '䶿' or '一' <= c <= '鿿'
+
+
 def latin_ok(text, zh):
     """Latin letters are allowed only as half-width capitals that also appear capitalised in the source."""
     source_caps = set(unicodedata.normalize('NFKC', text)) & set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    return all(('㐀' <= c <= '鿿') or c in source_caps for c in zh)
+    return all(is_cjk(c) or c in source_caps for c in zh)
 
 
 def check(text, zh, namespace):
