@@ -18,4 +18,4 @@
 5. 輸出限制：只能用繁體中文字；原文中的大寫縮寫字母要保留成半形大寫（例：Big D → 大D、Lil E → 小E），除此之外不得出現拉丁字母；不得包含任何標點符號（包括「·」「-」「'」「.」）、空白或數字；名、姓不超過 12 字，暱稱不超過 16 字；名與姓建議 2 到 5 字。原文含連字號、空格或撇號時，合併成一個自然的譯名（例：Jean-Luc → 尚呂克、Van Dyck → 范戴克、O'Brien → 歐布萊恩）。
 
 【範例】
-Gisele（given_name）→ 吉賽兒；Miller（surname）→ 米勒；Nicholas → 尼古拉斯；Anna → 安娜；Fox（nickname）→ 狐狸；Lena（nickname）→ 蓮娜；Haruka（given_name, Japanese）→ 遙；Wu（surname）→ 吳；Greywind（surname）→ 灰風
+Gisele（given_name）→ 吉賽兒；Sarah（given_name）→ 莎拉；Miller（surname）→ 米勒；Smith（surname）→ 史密斯；Nicholas → 尼古拉斯；Anna → 安娜；Natasha（given_name, Russian）→ 娜塔莎；Fox（nickname）→ 狐狸；Lena（nickname）→ 蓮娜；Chris（nickname, example: Christopher 'Chris' Hamilton）→ 克里斯；Haruka（given_name, Japanese）→ 遙；Kimiko（given_name, Japanese）→ 貴美子；Asano（surname, Japanese）→ 淺野；Wu（surname）→ 吳；Zhang（surname）→ 張；Minyoung（given_name, Korean）→ 敏英；Greywind（surname）→ 灰風；Nighthawk（surname）→ 夜鷹

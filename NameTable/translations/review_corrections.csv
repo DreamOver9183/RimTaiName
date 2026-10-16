@@ -69,3 +69,103 @@ name,Justin J,賈斯汀J,保留縮寫字母
 name,Skjerping H,雪爾平H,保留縮寫字母
 name,Pierre-M,皮耶爾M,保留縮寫字母
 name,C da Silva,C達席爾瓦,原譯漏掉 C 與 da
+name,Richter,里希特,「希特」讀音不全且易聯想希特勒（使用者指定「里希特」）
+name,Akira,明,只有一個漢字時取最常見寫法（黑澤明）
+name,Lawless,勞勒斯,讀音為 law-less
+name,Xiao,曉,「小」單獨當名字像形容詞，名字常用「曉」
+name,Everson,艾佛森,臺灣慣用譯法（艾佛森）
+name,Five,法夫,讀音為 faɪv，「懷夫」聲母不對
+name,Ronin,羅寧,名字應音譯，「浪人」是一般詞語
+name,Sera,瑟拉,女性名不宜用「塞」字
+name,Aetheria,艾瑟里亞,不是複合字，應音譯
+name,Buraku,布拉庫,「部落」是一般詞語，且日文含歧視意味
+name,Chenni,千妮,「陳妮」像華人全名；與 Jenni（珍妮）押韻
+name,Elekio,艾萊基奧,臺灣習慣以「艾」譯 E 開頭的人名
+name,Elrich,艾爾里奇,臺灣習慣以「艾爾」譯 El-
+name,Gerador,傑拉多,臺灣音譯慣用「傑」
+name,Hurtle,赫特爾,結尾 -tle 的音沒有譯出
+name,Jenniferium,珍妮佛瑞姆,Jennifer 在臺灣譯珍妮佛；-ium 不是「倫」
+name,Juan Manuel,胡安曼紐爾,臺灣慣用「曼紐爾」
+name,Lenka,蓮卡,女性名，「蘭卡」易聯想到斯里蘭卡
+name,Orchard,歐查德,「果園」是一般詞語，姓氏應音譯
+name,Painstingle,潘斯汀格,「刺痛」是一般詞語，當姓不自然
+name,Paulson,鮑爾森,臺灣慣用譯法（鮑爾森）
+name,Seafield,席菲爾德,是一般英文姓氏，「海田」像日文姓氏
+name,Shepherd-Finch,薛帕德芬奇,「潑」字不雅；Shepherd 臺灣常譯薛帕德
+name,Squid,史奎德,「烏賊」是一般詞語，姓氏應音譯
+name,Tachikoma,塔奇克馬,《攻殼機動隊》的 Tachikoma 臺灣譯為塔奇克馬
+name,Umbra,安布拉,名字應音譯；「暗影」已是暱稱 Shadow 的譯名
+name,von Aachen,馮亞琛,Aachen 的通行譯名為亞琛
+name,Von Bergen,馮貝爾根,「卑」字帶貶義
+name,Whitehouse,懷特豪斯,「白宮」會被讀成美國白宮
+name,Yosei,陽成,「妖精」有鬼怪、負面聯想；改用日文姓氏寫法
+name,Ashworth,艾許沃斯,臺灣慣用音譯（Ash 譯艾許、-worth 譯沃斯）
+name,Eastwood,伊斯威特,臺灣通行譯名（克林伊斯威特）
+name,Hemlock,漢洛克,單一名詞的姓應音譯，「毒芹」當姓不自然
+name,Pelagia,佩拉吉雅,與其他帝國女性名的「雅」一致
+name,Slate,史萊特,單一名詞的姓應音譯，「板岩」當姓不自然
+name,Zaitsev,柴契夫,臺灣通行譯名（《大敵當前》）
+nick,Rusty,拉斯提,是 Russell 的暱稱；「生鏽」是形容詞
+nick,Grim,死神,「嚴峻」是形容詞；Grim 取自死神 Grim Reaper，符合廢土掠奪者氣質
+nick,Toni,東尼,與 Tony 的臺灣譯法一致
+nick,Lance,藍斯,Lancelot 的簡稱，與名字 Lance 的譯名一致
+nick,Lumi,露蜜,與 Lumine（露蜜妮）一致
+nick,Grief,災星,「悲傷」是情緒詞，不像稱呼
+nick,Min,敏,與 Minyoung（敏英）一致
+nick,Seraph,熾天使,Seraph 的常見譯名
+nick,Veli,維利,與 Velius（維利烏斯）一致
+nick,Bell,貝爾,是 Belloch 的簡稱，與姓的音譯一致
+nick,Byte,拜特,是 Byter 的簡稱；「位元組」是電腦術語
+nick,Cave,卡弗,是 Caverlorn 的簡稱；「洞穴」不像稱呼
+nick,Four Eyes,四眼田雞,「妹」限定女性，字典會套用到所有小人
+nick,Greyhound,灰狗,Greyhound 通稱灰狗
+nick,Grill,格里爾,是 Griliopoulos 的簡稱
+nick,Hercules,海克力斯,臺灣通行譯名
+nick,Maskinnen,機器,挪威語 maskinen 意為「機器」，不是機靈鬼
+nick,Rare,稀客,「稀有」是形容詞
+nick,Shad,夏德,與 Shadoz（夏多茲）一致
+nick,Strapping,壯漢,「魁梧」是形容詞
+nick,Vas,瓦茲,「瓦斯」在臺灣是燃氣
+nick,Weaves,織匠,避免「XX者」直譯
+nick,Xandy,贊迪,與 Xandarian（贊達里安）一致
+nick,Snuff,嗅鼻,「熄命」不是常用詞
+nick,Beatface,爛臉,臺灣說「臉」
+nick,Belly,肚皮,「肚囊」不常用
+nick,Biggy,大個子,「大隻佬」是粵語用法
+nick,Blimp,大飛艇,Blimp 是軟式飛艇，「飛船」易與太空船混淆
+nick,Bogeyman,夜魔,Bogeyman 是嚇小孩的怪物，與沼澤無關
+nick,Bonegrind,磨骨,與 Cruncher（碎骨者）撞名，且避免「者」字尾
+nick,Brawn,肌肉男,「筋肉」是日文用法
+nick,Buttercup,金鳳花,毛茛是學名，暱稱用俗名較自然
+nick,Buttermilk,酪乳,較簡短，符合外號風格
+nick,Buttery,奶油,「油亮」是形容詞
+nick,Euthanizer,安息,「安樂死者」會讀成被安樂死的人（使用者指定）
+nick,Gammon,火腿,gammon 在臺灣稱火腿
+nick,Grit,砂礫,同組外號多為汙垢、磨渣等物質，官方「毅力」選錯義項
+nick,Hangman,絞刑手,與 Executioner（劊子手）撞名，Hangman 專指絞刑
+nick,Heft,秤砣,「沉重」是形容詞
+nick,Hothead,火藥桶,「急驚風」指性急，不是脾氣火爆
+nick,Husk,空殼,「麥稈皮」不自然；意譯為空殼（使用者指定）
+nick,Immolator,縱火狂,「燔祭者」冷僻；跟隨原版用語「縱火狂」（使用者指定）
+nick,Lard,豬油,「豬油膏」不自然
+nick,Mastic,大嚼,mastic 源自咀嚼；「乳香」與豬人氣質不符
+nick,Meaty,肉肉,「多肉」會聯想到多肉植物
+nick,Outrun,飛毛腿,「狂奔」是動詞（使用者指定）
+nick,Plug,矮墩,plug 指矮壯的人；「鼻塞」是症狀
+nick,Ponder,慢半拍,「沉思者」不符豬人形象，外號指反應慢
+nick,Porch,波奇,是 pork 的諧音外號；「門廊」不像稱呼
+nick,Router,擊潰手,rout 是擊潰，不是開路
+nick,Ruffle,亂毛,「毛躁」是形容詞
+nick,Scalp,剝頭皮,「頭皮」不像外號；與 Flay（剝皮）區分
+nick,Sizzle,滋滋,擬聲描述改成疊字暱稱
+nick,Skagor,斯卡戈,補上字尾 -or 的音節
+nick,Slay,屠戮,與 Murder（殺戮）撞名
+nick,Smasher,砸碎手,與 Crush（粉碎者）撞名
+nick,Smother,窒息,「窒息者」會讀成窒息的人（使用者指定）
+nick,Stout,大壯,「粗壯」是形容詞
+nick,Stub,短尾,指短小的尾巴；「殘根」不自然
+nick,Swine,豬玀,「家豬」是分類名詞，不像外號
+nick,Tramp,流浪漢,Tramp 是流浪漢；「浪人」是日本武士
+nick,Trots,豬蹄,trotters 指豬蹄；「小碎步」與豬人形象不符
+nick,Wiggy,威吉,是暱稱，不是「假髮」（同族群 Wuggy 譯窩吉）
+nick,Wilbur,韋伯,《夏綠蒂的網》的小豬在臺灣譯為韋伯
