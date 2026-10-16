@@ -109,6 +109,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **自訂 XML 檔：** 一律 `XmlReader.Create(path, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null })` 再 `XDocument.Load(reader)`。存在屬性裡的文字不得含 Tab／CR／LF（屬性正規化會把它們變成空白，讀回後鍵值對不上）。
 *   **可測試的 HTTP 用戶端：** 正式建構子建立 `HttpClientHandler { AllowAutoRedirect = false }`；`internal` 建構子注入 `HttpMessageHandler`、逾時與重試延遲，測試用假 handler（延遲要尊重 `CancellationToken`，否則 HttpClient 逾時測不到）。
 *   **UI 觸發的背景請求：** 主執行緒建立 `CancellationTokenSource` 並遞增世代編號，再 `Task.Run`；背景只在世代仍相符時寫入 volatile 結果欄位。金鑰變更、關閉頁面時呼叫 reset（遞增世代、取消、清除結果）。結果的記錄與 `Translate()` 都在主執行緒第一次繪製結果時進行（`Verse.Log` 是遊戲 API）。
+*   **Gemini 請求限制：** 所有請求（翻譯、測試連線）都先 `RimTaiNameMod.TryEnterGate` 取得 lease，結束時 Dispose。間隔一律用「已經過時間」（`now - lastStart`）計算，不要用 `lastStart + interval`：可避免溢位，系統時鐘倒退時也不會鎖死。
 *   **受限的文字輸入：** 用 `Widgets.TextField(rect, text, maxLength, regex)`，超長或不符的輸入直接被拒絕，不要事後 `Substring` 截斷（可能切斷代理對）。
 *   **給玩家或記錄的錯誤細節：** 先遮蔽金鑰、再截斷（Gemini 為 200 字）；截斷點落在高代理字元時往前退一格，不切斷代理對。錯誤 JSON 沒有 `message` 時改用原始回應內容。
 *   **字典產生：** Python 工具鏈 `extract_vanilla_names.py` → `build_full_input.py` → `agy_translate.py` → `merge_dictionary.py`；人工修正寫在 `NameTable/translations/` 的 CSV，不直接改 TSV。
@@ -140,6 +141,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   .NET 10 SDK 的 `dotnet test` 不再支援 VSTest：xunit.v3 必須搭配根目錄 `global.json` 的 `"test": {"runner": "Microsoft.Testing.Platform"}`，指令改為 `dotnet test --project <dir>`；測試專案不需要 `Microsoft.NET.Test.Sdk`、`xunit.runner.visualstudio`。
 *   xUnit 分析器 xUnit1051（測試專案設 `TreatWarningsAsErrors`）：呼叫接受 `CancellationToken` 的方法時要傳 `TestContext.Current.CancellationToken`。
 *   即時測試用 `Assert.SkipWhen`／`Assert.SkipUnless`（xunit.v3）在沒有金鑰時略過，並以 `[Trait("Category", "Live")]` 標記。
+*   即時測試檢查金鑰是否外洩時，**不要**用 `Assert.Contains`／`DoesNotContain(key, …)`：失敗訊息會把真實金鑰印進測試輸出。改用 `Assert.True(!text.Contains(key), "key leaked …")`。
 *   本帳號 Copilot 審查額度已用完：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
 *   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
 *   推送修正後立刻 `gh pr merge` 可能回報「Base branch was modified」；這是 GitHub 還在重算合併狀態，稍候重試即可，合併前確認 squash 內容含最新 commit。
