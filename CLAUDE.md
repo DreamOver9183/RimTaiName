@@ -165,6 +165,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 
 ### 名字規則（C# 與 Python 雙實作）
 *   規則同時存在於 `Tools/name_rules.py`（字典產生）與 `Pipeline/`（遊戲內），任何一邊改了都要同步另一邊並重跑 fixture。中文字元範圍兩邊都是 U+3400–U+4DBF、U+4E00–U+9FFF（不含中間的易經卦符）。
+*   **翻譯規則單一來源：** `Prompts/NameRules_zhTW.txt` 放共用的【規則】1～5 與【範例】（LF、隨 Mod 打包）。`Tools/name_rules.py` 與 `Llm/PromptBuilder` 各自加上開頭、輸入欄位說明與第 6 條。改 Python 那邊時，要確認 `TRANSLATION_RULES` 只在預期處改變，因為它決定離線字典怎麼翻。
+*   兩種語言讀同一個文字檔時，Python 用 `encoding='utf-8-sig'`、C# 去掉開頭 `﻿`，並把 `\r\n` 與單獨的 `\r` 都正規化成 `\n`，否則 BOM 或換行差異會讓兩邊組出不同的提示。
 *   `NameSanitizer.Check` 只對應 Python 的三種「不合格」；`Sanitize` 是寫入前的清理（去標點符號、檢查遊戲 regex），所有來源的譯名都要經過它。
 *   .NET 正規表示式的 `$` 會匹配結尾換行之前的位置，要求整串時用 `\z`。
 *   `string.Normalize` 遇到孤立代理字元會丟 `ArgumentException`；一律經 `TextNormalization.Normalize`。
