@@ -5,13 +5,14 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using RimTaiName.Core;
+using RimTaiName.Pipeline;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
 namespace RimTaiName.UI_Patches
 {
-    /// <summary>Unlocks first/last names for humanlike pawns, widens the window and snapshots the names.</summary>
+    /// <summary>Unlocks first/last names for humanlike pawns, widens the window and records the names as opened.</summary>
     [HarmonyPatch(typeof(Dialog_NamePawn), MethodType.Constructor,
         new[] { typeof(Pawn), typeof(NameFilter), typeof(NameFilter), typeof(Dictionary<NameFilter, List<string>>),
                 typeof(string), typeof(string), typeof(string), typeof(string) })]
@@ -30,13 +31,19 @@ namespace RimTaiName.UI_Patches
         {
             if (!NamePawnAccess.IsSupported(pawn))
                 return;
-            var state = DialogStateRegistry.Create(__instance);
-            NamePawnAccess.Size(__instance).x += LockColumnWidth;
-            foreach (object context in NamePawnAccess.Names(__instance))
+            try
             {
-                int index = NamePawnAccess.NameIndex(context);
-                if (index >= 0 && index <= 2)
-                    state.Snapshot[index] = NamePawnAccess.Current(context);
+                var name = (NameTriple)pawn.Name;
+                string[] opened = NamePawnAccess.ReadFields(NamePawnAccess.Rows(__instance), out _);
+                // The nickname box is blank when no nickname is set; NameTriple.Nick then falls back to first or last.
+                NickSource nickSource = NickAliasResolver.Determine(opened[0], opened[1], opened[2], name.NickSet, name.Nick);
+                DialogStateRegistry.Create(__instance, new DialogState(pawn, new NameDialogSession(opened[0], opened[1], opened[2], nickSource)));
+                NamePawnAccess.Size(__instance).x += LockColumnWidth;
+                DialogTranslation.SaveCache();
+            }
+            catch (Exception e)
+            {
+                ModLog.ErrorOnce($"naming dialog setup failed: {e}", 0x52544e03);
             }
         }
     }
@@ -53,11 +60,11 @@ namespace RimTaiName.UI_Patches
             {
                 var state = DialogStateRegistry.Get(DialogStateRegistry.Drawing);
                 int index = NamePawnAccess.NameIndex(__instance);
-                if (state == null || index < 0 || index > 2 || !NamePawnAccess.Editable(__instance))
+                if (state == null || index < 0 || index >= NameFields.Count || !NamePawnAccess.Editable(__instance))
                     return;
                 // Right-justified: a newborn's last-name row draws no button when no parent has a surname.
                 Rect cell = divider.NewCol(24f, HorizontalJustification.Right);
-                Widgets.Checkbox(new Vector2(cell.x, cell.y + (cell.height - 24f) / 2f), ref state.Locked[index]);
+                Widgets.Checkbox(new Vector2(cell.x, cell.y + (cell.height - 24f) / 2f), ref state.Session.Locked[index]);
                 TooltipHandler.TipRegion(cell, "RimTaiName_LockTip".Translate());
             }
             catch (Exception e)
@@ -67,7 +74,7 @@ namespace RimTaiName.UI_Patches
         }
     }
 
-    /// <summary>Applies pending writes, tracks the drawing dialog and injects the toolbar row.</summary>
+    /// <summary>Applies results and pending writes, injects the toolbar row and notices the accept.</summary>
     [HarmonyPatch(typeof(Dialog_NamePawn), nameof(Dialog_NamePawn.DoWindowContents))]
     internal static class Patch_Dialog_NamePawn_DoWindowContents
     {
@@ -75,8 +82,34 @@ namespace RimTaiName.UI_Patches
         {
             DialogStateRegistry.Drawing = __instance;
             var state = DialogStateRegistry.Get(__instance);
-            if (state?.PendingWrite != null && Event.current.type == EventType.Layout)
-                ApplyPending(__instance, state);
+            if (state == null || Event.current.type != EventType.Layout)
+                return;
+            try
+            {
+                // Writes to NameContext.current happen only here, before the text boxes are laid out.
+                DialogTranslation.OnLayout(__instance, state);
+            }
+            catch (Exception e)
+            {
+                ModLog.ErrorOnce($"naming dialog update failed: {e}", 0x52544e04);
+            }
+        }
+
+        /// <summary>Accepting builds a new NameTriple, assigns it and removes the window inside DoWindowContents.</summary>
+        private static void Postfix(Dialog_NamePawn __instance)
+        {
+            var state = DialogStateRegistry.Get(__instance);
+            if (state == null || state.Accepted || ReferenceEquals(state.Pawn.Name, state.OriginalName) || __instance.IsOpen)
+                return;
+            state.Accepted = true;
+            try
+            {
+                DialogTranslation.OnAccepted(__instance, state);
+            }
+            catch (Exception e)
+            {
+                ModLog.ErrorOnce($"learning from the naming dialog failed: {e}", 0x52544e05);
+            }
         }
 
         private static Exception Finalizer(Exception __exception)
@@ -105,21 +138,6 @@ namespace RimTaiName.UI_Patches
             ModLog.Message("toolbar row injected into Dialog_NamePawn.DoWindowContents");
             return matcher.InstructionEnumeration();
         }
-
-        private static void ApplyPending(Dialog_NamePawn dialog, DialogState state)
-        {
-            if (state.PendingUnfocus)
-                UI.UnfocusCurrentTextField();
-            foreach (object context in NamePawnAccess.Names(dialog))
-            {
-                int index = NamePawnAccess.NameIndex(context);
-                if (index < 0 || index > 2 || !NamePawnAccess.Editable(context) || state.Locked[index])
-                    continue;
-                if (state.PendingWrite[index] != null)
-                    NamePawnAccess.Current(context) = state.PendingWrite[index];
-            }
-            state.PendingWrite = null;
-        }
     }
 
     internal static class ToolbarDrawer
@@ -127,9 +145,6 @@ namespace RimTaiName.UI_Patches
         private const float RowHeight = 35f;
 
         private const float ColumnGap = 17f;
-
-        /// <summary>Step 0 spike buttons; the real toolbar replaces them with Translate / Restore.</summary>
-        private static readonly string[] SpikeValues = { "測試名", "測試暱稱", "測試姓" };
 
         public static void Draw(Dialog_NamePawn dialog, ref RectAggregator aggregator)
         {
@@ -139,24 +154,21 @@ namespace RimTaiName.UI_Patches
                 if (state == null)
                     return;
                 RectDivider row = aggregator.NewRow(RowHeight);
-                float width = Mathf.Floor((row.Rect.width - 2 * ColumnGap) / 3f);
-                if (Widgets.ButtonText(row.NewCol(width), "RimTaiName_Spike_WriteUnfocus".Translate()))
-                    Queue(state, SpikeValues, unfocus: true);
-                if (Widgets.ButtonText(row.NewCol(width), "RimTaiName_Spike_WriteKeepFocus".Translate()))
-                    Queue(state, SpikeValues, unfocus: false);
-                if (Widgets.ButtonText(row.NewCol(width), "RimTaiName_Restore".Translate()))
-                    Queue(state, state.Snapshot, unfocus: true);
+                float width = Mathf.Floor((row.Rect.width - ColumnGap) / 2f);
+                bool running = state.Job.Running;
+                Rect translate = row.NewCol(width);
+                if (Widgets.ButtonText(translate, (running ? "RimTaiName_Translating" : "RimTaiName_Translate").Translate(), active: !running))
+                    DialogTranslation.Translate(dialog, state);
+                TooltipHandler.TipRegion(translate, "RimTaiName_TranslateTip".Translate());
+                Rect restore = row.NewCol(width);
+                if (Widgets.ButtonText(restore, "RimTaiName_Restore".Translate()))
+                    DialogTranslation.Restore(state);
+                TooltipHandler.TipRegion(restore, "RimTaiName_RestoreTip".Translate());
             }
             catch (Exception e)
             {
                 ModLog.ErrorOnce($"toolbar failed: {e}", 0x52544e02);
             }
-        }
-
-        private static void Queue(DialogState state, string[] values, bool unfocus)
-        {
-            state.PendingWrite = (string[])values.Clone();
-            state.PendingUnfocus = unfocus;
         }
     }
 }

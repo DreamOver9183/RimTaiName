@@ -2,9 +2,15 @@
 <LanguageData>
   <!-- 命名視窗 -->
   <RimTaiName_LockTip>鎖定：翻譯時不變更此欄</RimTaiName_LockTip>
+  <RimTaiName_Translate>翻譯姓名</RimTaiName_Translate>
+  <RimTaiName_Translating>處理中...</RimTaiName_Translating>
+  <RimTaiName_TranslateTip>把未鎖定的名、暱稱、姓翻成繁體中文：先查個人快取與內建字典，查不到的才一次送給 Gemini（需要 API Key）。</RimTaiName_TranslateTip>
   <RimTaiName_Restore>還原</RimTaiName_Restore>
-  <RimTaiName_Spike_WriteUnfocus>測試寫入（取消焦點）</RimTaiName_Spike_WriteUnfocus>
-  <RimTaiName_Spike_WriteKeepFocus>測試寫入（保留焦點）</RimTaiName_Spike_WriteKeepFocus>
+  <RimTaiName_RestoreTip>未鎖定的欄位恢復為開啟視窗時的內容。</RimTaiName_RestoreTip>
+  <RimTaiName_Dialog_NoKey>{0}不在內建字典中，需要先在 Mod 設定中設定 Gemini API Key 才能翻譯。</RimTaiName_Dialog_NoKey>
+  <RimTaiName_Dialog_RemoteFailed>無法翻譯{0}：{1}</RimTaiName_Dialog_RemoteFailed>
+  <RimTaiName_Dialog_Rejected>Gemini 給的{0}譯名不符合命名規則，已保留原文。</RimTaiName_Dialog_Rejected>
+  <RimTaiName_Dialog_NothingToTranslate>沒有需要翻譯的欄位：都已鎖定、空白或已是中文。</RimTaiName_Dialog_NothingToTranslate>
 
   <!-- Gemini 結果 -->
   <RimTaiName_Gemini_Ok>連線成功：金鑰與模型都可以使用。</RimTaiName_Gemini_Ok>
