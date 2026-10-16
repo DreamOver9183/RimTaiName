@@ -96,15 +96,92 @@ namespace RimTaiName.Tests.Pipeline
         [Theory]
         [InlineData(null, "x")]
         [InlineData("", "x")]
+        [InlineData("   ", "x")]
         [InlineData("key", null)]
         [InlineData("key", "")]
+        [InlineData("key", " ")]
         [InlineData("bad\u0001key", "x")]
         [InlineData("key", "bad￿value")]
-        public void RejectsEmptyOrNonXmlText(string key, string value)
+        [InlineData("tab\tkey", "x")]
+        [InlineData("key", "line\nbreak")]
+        [InlineData("key", "carriage\rreturn")]
+        public void RejectsBlankOrUnstorableText(string key, string value)
         {
             PersonalNameCache cache = Loaded();
             Assert.False(cache.Put(NameSpace.Name, key, value, CacheOrigin.Api));
             Assert.Equal(0, cache.Count);
+        }
+
+        [Fact]
+        public void RejectsOverlongText()
+        {
+            PersonalNameCache cache = Loaded();
+            Assert.True(cache.Put(NameSpace.Name, new string('k', 256), "x", CacheOrigin.Api));
+            Assert.False(cache.Put(NameSpace.Name, new string('k', 257), "x", CacheOrigin.Api));
+            Assert.False(cache.Put(NameSpace.Name, "k", new string('v', 257), CacheOrigin.Api));
+        }
+
+        [Fact]
+        public void DtdIsProhibitedAndTreatedAsCorrupt()
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(CachePath,
+                "<?xml version=\"1.0\"?><!DOCTYPE RimTaiNameCache [<!ENTITY a \"aaaaaaaaaa\"><!ENTITY b \"&a;&a;&a;&a;\">]>" +
+                "<RimTaiNameCache version=\"1\"><entry ns=\"name\" key=\"x\" value=\"&b;\" /></RimTaiNameCache>");
+            PersonalNameCache cache = Loaded();
+            Assert.Equal(0, cache.Count);
+            Assert.Contains("XmlException", cache.LastError);
+            Assert.True(File.Exists(CachePath + ".corrupt"));
+        }
+
+        [Fact]
+        public void LockedFileIsNotQuarantinedAndIsMergedOnSave()
+        {
+            PersonalNameCache first = Loaded();
+            first.Put(NameSpace.Name, "anna", "安娜", CacheOrigin.Api);
+            first.Put(NameSpace.Nick, "fox", "狐狸", CacheOrigin.User);
+            first.SaveIfDirty();
+
+            PersonalNameCache cache;
+            using (new FileStream(CachePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                cache = Loaded();
+                Assert.NotNull(cache.LastError);
+                Assert.Equal(0, cache.Count);
+                Assert.False(File.Exists(CachePath + ".corrupt"));
+
+                cache.Put(NameSpace.Name, "miller", "米勒", CacheOrigin.Api);
+                cache.Put(NameSpace.Nick, "fox", "狐", CacheOrigin.Api);
+                Assert.False(cache.SaveIfDirty());
+                Assert.True(cache.IsDirty);
+            }
+
+            Assert.True(cache.SaveIfDirty());
+            PersonalNameCache reloaded = Loaded();
+            Assert.Equal(3, reloaded.Count);
+            Assert.True(reloaded.TryGet(NameSpace.Name, "anna", out _, out _));
+            Assert.True(reloaded.TryGet(NameSpace.Name, "miller", out _, out _));
+            Assert.True(reloaded.TryGet(NameSpace.Nick, "fox", out string fox, out CacheOrigin origin));
+            Assert.Equal("狐狸", fox);
+            Assert.Equal(CacheOrigin.User, origin);
+        }
+
+        [Theory]
+        [InlineData("user", "api")]
+        [InlineData("api", "user")]
+        public void DuplicateEntriesKeepThePlayersCorrection(string firstOrigin, string secondOrigin)
+        {
+            Directory.CreateDirectory(dir);
+            string userValue = "米樂", apiValue = "米勒";
+            File.WriteAllText(CachePath,
+                "<RimTaiNameCache version=\"1\">" +
+                $"<entry ns=\"name\" key=\"miller\" value=\"{(firstOrigin == "user" ? userValue : apiValue)}\" origin=\"{firstOrigin}\" />" +
+                $"<entry ns=\"name\" key=\"miller\" value=\"{(secondOrigin == "user" ? userValue : apiValue)}\" origin=\"{secondOrigin}\" />" +
+                "</RimTaiNameCache>");
+            PersonalNameCache cache = Loaded();
+            Assert.True(cache.TryGet(NameSpace.Name, "miller", out string value, out CacheOrigin origin));
+            Assert.Equal(userValue, value);
+            Assert.Equal(CacheOrigin.User, origin);
         }
 
         [Fact]
