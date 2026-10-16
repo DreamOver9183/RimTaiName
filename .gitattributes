@@ -1,3 +1,5 @@
 * text=auto
 # The game-side dictionary parser and merge_dictionary.py both use LF
 *.tsv text eol=lf
+# Shared prompt rules are read by both Python and the mod; keep one exact form
+Prompts/*.txt text eol=lf

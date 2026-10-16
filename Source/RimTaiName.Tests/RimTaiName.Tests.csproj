@@ -23,6 +23,7 @@
   <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Dictionary\BaseNames_zhTW.tsv" Link="Data\BaseNames_zhTW.tsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Prompts\NameRules_zhTW.txt" Link="Data\NameRules_zhTW.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- Runs on Microsoft.Testing.Platform (see /global.json): dotnet test - -project Source/RimTaiName.Tests -->
