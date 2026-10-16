@@ -67,7 +67,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | 即時 API 測試 | `$env:RIMTAINAME_KEY_FILE = (Resolve-Path RimTaiName_KEY_01.txt).Path; dotnet test --project Source/RimTaiName.Tests --filter-trait "Category=Live"; $env:RIMTAINAME_KEY_FILE = $null`。每次用掉約 4 次請求額度；未設環境變數時這些測試自動略過 |
 | Python 語法檢查 | `python -I -m py_compile Tools/<file>.py`（沒有安裝 ruff／pyflakes） |
 | PowerShell 語法檢查 | `[System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)`（沒有 PSScriptAnalyzer） |
-| 打包 | `powershell -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（Step 1 建立） |
+| 打包 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/package_mod.ps1` → `dist/RimTaiName/`、`dist/RimTaiName.zip`（含建置與金鑰掃描；`-NoBuild` 略過建置） |
+| 打包腳本自我測試 | `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/test_package_mod.ps1`（改動打包腳本時執行，11 個情境） |
 | 重新產生字典 | `python -I Tools/merge_dictionary.py` |
 | 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
 | PR 自動審查 | `python -I Tools/agy_review.py <PR#> --post` |
@@ -136,6 +137,13 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach <tmp> <branch>`），避免工作區中下一個單元的未追蹤檔案混入。
 *   多個 PR 平行審查時，切換分支會讓「已提交在別的分支」的檔案從工作區消失；回頭修前一個 PR 前，先 `git stash push --include-untracked -- <後續單元的路徑>`，修完、合併後再 `git stash pop`。
 *   本 session 的工具不允許 `Remove-Item Env:<名稱>`（會被誤判成刪除路徑）；清除環境變數用 `$env:<名稱> = $null`。
+
+### PowerShell 5.1 腳本
+*   路徑一律 `-LiteralPath`（或直接用 .NET API）：`-Path` 會把 `[`、`]` 當萬用字元，`[Modding]` 這類資料夾會被當成不存在。`New-Item -Path` 改用 `[System.IO.Directory]::CreateDirectory`。
+*   `Compress-Archive` 遇方括號路徑會失敗；`ZipFile.CreateFromDirectory` 在 .NET Framework 會寫入 `\` 分隔符。改用 `ZipFile.Open(..., Create)` ＋ `ZipFileExtensions.CreateEntryFromFile`，項目名稱自行換成 `/`。
+*   `Get-ChildItem` 預設略過隱藏檔；做安全掃描時一定要加 `-Force`。
+*   `Join-Path` 不會處理已是絕對路徑的子路徑；把參數轉成絕對路徑要用 `[System.IO.Path]::GetFullPath([System.IO.Path]::Combine((Get-Location).ProviderPath, $p))`。
+*   腳本檔維持 ASCII（註解用英文），避免 PowerShell 5.1 把無 BOM 的 UTF-8 當成 ANSI 讀取。
 
 ### C#／Mono 相容
 *   字串解析器在呼叫 `string.CompareOrdinal(a, i, b, j, len)` 前先檢查剩餘長度：.NET 10 會自動截短比較，Mono 可能直接丟 `ArgumentOutOfRangeException`，測試抓不到差異。
