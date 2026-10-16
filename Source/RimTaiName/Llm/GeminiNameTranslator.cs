@@ -31,7 +31,7 @@ namespace RimTaiName.Llm
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             GeminiResult result = await transport
-                .SendAsync(modelProvider(), prompts.BuildTranslateBody(request), cancellationToken)
+                .SendAsync(modelProvider(), prompts.BuildBody(request), cancellationToken)
                 .ConfigureAwait(false);
             return result.Success ? ParseOutput(result.Text) : LlmResponse.Fail(result.Error, result.StatusCode, result.Detail);
         }

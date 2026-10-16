@@ -90,12 +90,14 @@ namespace RimTaiName.Pipeline
         /// The request for the fields as they are now. A field the dialog does not let the player edit counts as
         /// locked, so the pipeline never plans a write the dialog would refuse.
         /// </summary>
-        public NameRequestPayload CreatePayload(IReadOnlyList<string> current, IReadOnlyList<bool> editable, bool keepVanillaAddress)
+        public NameRequestPayload CreatePayload(IReadOnlyList<string> current, IReadOnlyList<bool> editable, bool keepVanillaAddress,
+                                                ProcessMode mode = ProcessMode.Translate)
         {
             CheckCount(current, nameof(current));
             CheckCount(editable, nameof(editable));
             var payload = new NameRequestPayload(current[0], current[1], current[2])
             {
+                Mode = mode,
                 NickSource = NickSource,
                 KeepVanillaAddress = keepVanillaAddress,
             };

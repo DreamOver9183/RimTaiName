@@ -43,6 +43,7 @@
   <RimTaiName_Source_PersonalCache>personal cache</RimTaiName_Source_PersonalCache>
   <RimTaiName_Source_Dictionary>built-in dictionary</RimTaiName_Source_Dictionary>
   <RimTaiName_Source_Api>Gemini</RimTaiName_Source_Api>
+  <RimTaiName_Source_Generated>named by Gemini</RimTaiName_Source_Generated>
   <RimTaiName_Source_Failed>failed</RimTaiName_Source_Failed>
   <RimTaiName_Source_Pending>pending</RimTaiName_Source_Pending>
 

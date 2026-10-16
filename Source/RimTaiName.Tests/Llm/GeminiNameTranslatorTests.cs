@@ -75,6 +75,24 @@ namespace RimTaiName.Tests.Llm
         }
 
         [Fact]
+        public async Task GenerateRequestUsesTheGenerationPrompt()
+        {
+            var (translator, handler) = Create(responses: Respond(200, Completed("{\"first\":\"凱倫\",\"nick\":\"\",\"last\":\"\"}")));
+            LlmRequest request = Request("Gisele", "", "米勒", NameField.First);
+            request.Mode = ProcessMode.Generate;
+            request.Locked[(int)NameField.Last] = true;
+            request.Context = new PawnContext { Gender = "female" };
+            LlmResponse response = await translator.TranslateAsync(request, Ct);
+
+            Assert.Equal("凱倫", response[NameField.First]);
+            var body = MiniJson.AsObject(MiniJson.Parse(Assert.Single(handler.Requests).Body));
+            Assert.Contains("【取名方式】", (string)body["system_instruction"]);
+            var input = MiniJson.AsObject(MiniJson.Parse((string)body["input"]));
+            Assert.Equal("female", MiniJson.AsObject(input["pawn"])["gender"]);
+            Assert.Equal("米勒", MiniJson.AsObject(input["locked"])["last"]);
+        }
+
+        [Fact]
         public async Task ModelIsReadForEveryRequest()
         {
             string model = "gemini-3.5-flash-lite";

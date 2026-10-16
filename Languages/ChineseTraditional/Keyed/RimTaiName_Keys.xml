@@ -43,6 +43,7 @@
   <RimTaiName_Source_PersonalCache>個人快取</RimTaiName_Source_PersonalCache>
   <RimTaiName_Source_Dictionary>內建字典</RimTaiName_Source_Dictionary>
   <RimTaiName_Source_Api>Gemini</RimTaiName_Source_Api>
+  <RimTaiName_Source_Generated>Gemini 取名</RimTaiName_Source_Generated>
   <RimTaiName_Source_Failed>失敗</RimTaiName_Source_Failed>
   <RimTaiName_Source_Pending>等待中</RimTaiName_Source_Pending>
 
