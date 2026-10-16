@@ -50,7 +50,8 @@
 | Step 1 | 完成 | PR #1～#7 已合併：金鑰儲存與遮蔽、Gemini 傳輸層（即時 API 測試通過）、個人快取、打包腳本、設定頁（修正 Listing 自動開新欄造成的塌陷）、金鑰稽核腳本；單元測試 140 項；測試機實測 DPAPI、測試連線、金鑰稽核皆通過；GitHub：DreamOver9183/RimTaiName |
 | Step 2 | 完成 | PR #8～#10：名字規則（與 Python 逐筆一致的 fixture）、內建字典、暱稱別名與 `NameProcessorService`；單元測試 252 項 |
 | Step 3 | 完成 | PR #11～#13：共用規則檔與 `PromptBuilder`、`GeminiNameTranslator`、`RequestGate`、`UiJob`、設定頁的開發者翻譯測試；單元測試 296 項、即時測試 5 項；測試機實測翻譯（Gemini＋內建字典）、測試連線與金鑰稽核皆通過（`TestLog/4`） |
-| Step 4～7 | 未開始 | 見第 11 節 |
+| Step 4（**MVP**） | 完成 | PR #14、#16：命名視窗正式版——「翻譯姓名」「還原」、等待中保護（暫停點外關閉、只覆寫沒被改過的欄位、晚到結果只進快取）、確定後學習玩家修正；單元測試 327 項；測試機實測通過（`TestLog/5`、`TestLog/5-2`） |
+| Step 5～7 | 未開始 | 見第 11 節 |
 
 **驗證用 Mod 的現有程式（Step 4 會改寫成正式版）：**
 *   `Source/RimTaiName/Core/RimTaiNameMod.cs`：Mod 進入點；逐一套用 patch，單一失敗不影響其他。
