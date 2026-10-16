@@ -44,8 +44,9 @@
 | 研究與規格校正 | 完成 | v1 → v2 共 16 項修正（附錄 A） |
 | 原版人名抽取 | 完成 | `Tools/extract_vanilla_names.py` → `NameTable/`：共 24,596 個名字詞，分四層 |
 | 內建字典 v0.1 | 完成（部分校對） | `Dictionary/BaseNames_zhTW.tsv`。第 1 層逐筆校對；官方譯名逐筆對照；第 2、4 層待校對 |
-| Step 0 技術驗證 | 完成，新生兒視窗待測 | Harmony patch、遊戲內 HTTPS、工具列與鎖頭、焦點寫入皆通過；在測試機 386 個 Mod 環境下正常 |
-| 開發環境 | 完成 | .NET 10 SDK 10.0.402；直接引用遊戲 DLL 編譯；`RimWorld\Mods\RimTaiName` 以 junction 連到專案 |
+| Step 0 技術驗證 | 完成，新生兒視窗待測 | Harmony patch、遊戲內 HTTPS、工具列與鎖頭、焦點寫入皆通過；在測試機 386 個 Mod 環境下正常。新生兒視窗改在開發者模式下測試（4.2） |
+| 開發環境 | 完成 | .NET 10 SDK 10.0.402；直接引用遊戲 DLL 編譯；`RimWorld\Mods\RimTaiName` 以 junction 連到專案；本機 git（branch `main`） |
+| 實作計畫 | 完成並重審 | `RimTaiName 實作計畫.markdown`：Step 0～7 的工作清單與進度勾選。10-16 重審遊戲 API 與 Gemini API，修正已回寫本文件（附錄 A） |
 | Step 1～7 | 未開始 | 見第 11 節 |
 
 **驗證用 Mod 的現有程式（Step 4 會改寫成正式版）：**
@@ -53,7 +54,7 @@
 *   `Source/RimTaiName/UI_Patches/Patch_Dialog_NamePawn.cs`：建構子、`MakeRow`、`DoWindowContents` 三個 patch 與 `ToolbarDrawer`。
 *   `Source/RimTaiName/UI_Patches/NamePawnAccess.cs`：反射存取委派。
 *   `Source/RimTaiName/UI_Patches/DialogState.cs`：每個視窗的狀態與註冊表。
-*   `Source/RimTaiName/Spike/ConnectivityProbe.cs`：HTTPS 測試（Step 1 改寫成「測試連線」）。
+*   `Source/RimTaiName/Spike/ConnectivityProbe.cs`：HTTPS 測試（Step 1 刪除，由 `GeminiInteractionsClient` 的「測試連線」取代）。
 
 ---
 
@@ -72,6 +73,8 @@
 | 預設模型 `gemini-3.5-flash-lite`；不傳 thinking 與取樣參數 | 2.5 系列已限制新帳號；3.x 改用 `thinking_level` 且取樣參數已棄用 | 10-14 |
 | 網路用 `HttpClient`，禁用 `UnityWebRequest` | 後者只能在主執行緒使用；1.7 已改用非 Unity 引擎 | 10-14 |
 | API Key 不寫入 Mod 設定檔，加密另存；只在玩家按下按鈕時送往固定的 Gemini 端點 | 防止設定檔、記錄檔、轉址等管道外洩（第 9 節） | 10-16 |
+| 測試連線送一次極小的 Interactions 請求，不用 `models.get` | 一次驗證金鑰、模型、權限與額度，且只需處理一種錯誤格式；代價是用掉 1 次請求額度 | 10-16 |
+| 非 Windows 平台的金鑰只在本次遊戲期間記憶 | Mono 在 macOS／Linux 會靜默改用較弱的 ManagedProtection，且無法在開發環境實測 | 10-16 |
 | 直接引用遊戲 `Managed/` 的 DLL 編譯 | 只能用到遊戲實際存在的 API，且不需 NuGet 套件 | 10-15 |
 | 單元測試用 xUnit | 業界標準；測試專案只連結純 C# 管線檔 | 10-16 |
 | 離線批次翻譯用 Antigravity CLI，Python 同時開 8 個行程 | 比 Gemini 子代理少掉主代理抄寫的開銷；全量 15.7 分鐘 | 10-15 |
@@ -89,16 +92,19 @@
 | 顯示順序 | `ToStringFull` 輸出「`First Last`」 | 譯名一律採外文名的音譯／意譯風格 |
 | 隱藏引號 | `Nick == First` 或 `Nick == Last` 時省略引號 | 同名關係的暱稱必須與對應欄位的中文完全相同（6.3） |
 | 暱稱空白 | `NickSet == false` 時，稱呼由名、姓雜湊的奇偶決定，視窗暱稱欄空白 | 以開窗時的 `pawn.Name` 判斷稱呼來源（6.3） |
-| 字元與長度 | `ValidNameRegex = ^[\p{L}0-9 '\-.]*$`；名 12、暱稱 16、姓 12 字；只在打字時檢查 | 程式寫入前自行清理與驗證（第 8 節第 4 點） |
+| 字元與長度 | `CharacterCardUtility.ValidNameRegex = ^[\p{L}0-9 '\-.]*$`；名 12、暱稱 16、姓 12 字（以 UTF-16 計）；只在打字時檢查。會擋 `·`、`・` 與 CJK 擴充 B 以後的字 | 程式寫入前自行清理與驗證（第 8 節第 4 點） |
 | 零存檔污染 | — | 不新增 `ThingComp`、`WorldComponent`、`GameComponent` |
 | UI 字型 | IMGUI 字型不支援 Emoji | 只用純文字、Keyed 語言包、原版 `Widgets` |
 
 ### 4.2 原版命名視窗（`Verse.Dialog_NamePawn`）
 
 *   **建構子：** `(Pawn pawn, NameFilter visibleNames, NameFilter editableNames, Dictionary<NameFilter, List<string>> suggestedNames, string initialFirstNameOverride, …NickName…, …LastName…, …Title…)`
-*   **權限：**
+*   **權限**（`PawnNamingUtility.NamePawnDialog`）：
     *   成年小人：名、暱稱、姓、頭銜四列可見，只有暱稱與頭銜可編輯。
-    *   新生兒命名期限內或開發者模式：名、暱稱、姓三列皆可編輯；姓欄顯示「建議...」（父母的姓），沒有隨機鈕。
+    *   新生兒命名期限內**或開發者模式**：名、暱稱、姓三列皆可編輯，頭銜隱藏；姓欄顯示「建議...」（父母的姓），沒有隨機鈕。開發者模式下任何小人都會開出這個版本，可用來測試新生兒視窗。
+    *   父母都沒有姓時，「建議」清單是空的，姓欄**不畫任何按鈕**。
+*   **確定流程：** 沒有覆寫 `OnAcceptKeyPressed`。按 Enter 或確定時，`DoWindowContents` 內依序執行 `BuildName()`（每次都 `new NameTriple`）→ `IsValid` → `pawn.Name = name` → `WindowStack.TryRemove(this)`。因此可用 `ReferenceEquals(pawn.Name, 開窗時的 Name)` 偵測「確定」。不要 patch `Pawn.Name` 的 setter（可能被 inline，且開局畫面每次按鍵都會重設名字）。
+*   **點視窗外：** `closeOnClickedOutside = true`，點外面會直接取消。
 *   **私有成員：**
     *   `Dialog_NamePawn`：`pawn`、`names`、`size`。
     *   巢狀類別 `NameContext`：`current`、`editable`、`nameIndex`（0 名／1 暱稱／2 姓／-1 頭銜）、`maximumNameLength`。
@@ -121,13 +127,14 @@ RimTaiName/                          ✓ = 已存在
 ├── Prompts/NameRules_zhTW.txt       規劃中：翻譯規則，C# 與 Python 共用
 └── Source/
     ├── RimTaiName/                  ✓ net472，引用遊戲 DLL
-    │   ├── Core/                    RimTaiNameMod ✓、RimTaiNameSettings、ApiKeyStore、KeyRedactor、NameRequestPayload
-    │   ├── Pipeline/                純 C#，不引用遊戲型別
-    │   │                            NameKey、SpecialFormRule、NickAliasResolver、NameSanitizer、
-    │   │                            BuiltInDictionary、PersonalNameCache、NameProcessorService
-    │   ├── Llm/                     ILlmClient、GeminiInteractionsClient、PromptBuilder、MiniJson
+    │   ├── Core/                    RimTaiNameMod ✓、RimTaiNameSettings、ApiKeyStore、KeyRedactor、ModLog
+    │   ├── Pipeline/                純 C#，不引用遊戲型別、不寫記錄
+    │   │                            NameRequestPayload、NameKey、SpecialFormRule、NickAliasResolver、
+    │   │                            NameSanitizer、BuiltInDictionary、PersonalNameCache、NameProcessorService
+    │   ├── Llm/                     純 C#：ILlmClient、GeminiInteractionsClient、PromptBuilder、MiniJson、
+    │   │                            RequestGate、QuotaResetClock
     │   └── UI_Patches/              ✓ 驗證版，Step 4 改寫
-    └── RimTaiName.Tests/            規劃中：xUnit，net10.0，連結 Pipeline/ 與 Llm/ 原始碼
+    └── RimTaiName.Tests/            規劃中（Step 1）：xUnit，net10.0，連結 Pipeline/、Llm/ 與 Core/KeyRedactor.cs
 
 開發用（不隨模組發佈）：
 Tools/      ✓ 抽取、抽樣、批次翻譯、合併等 Python 工具
@@ -141,7 +148,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
 | :--- | :--- |
 | 解鎖名與姓 | 建構子 Prefix：`editableNames |= visibleNames & (First | Last)` |
 | 加寬視窗 | 建構子 Postfix：`size.x += 41`（欄距 17 ＋ 勾選框 24） |
-| 鎖頭 | `NameContext.MakeRow` Postfix：在該列剩下的空間 `divider.NewCol(24)` 畫勾選框；只畫 `nameIndex` 0～2 且可編輯的列 |
+| 鎖頭 | `NameContext.MakeRow` Postfix：在該列剩下的空間以 `divider.NewCol(24f, HorizontalJustification.Right)` 靠右畫勾選框（姓欄沒有按鈕時也能對齊）；只畫 `nameIndex` 0～2 且可編輯的列 |
 | 工具列 | `DoWindowContents` Transpiler：在 `rectAggregator.NewRow(17.5f)` 前插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；視窗高度由原版自動調整 |
 | 套用結果 | `DoWindowContents` Prefix，且只在 `EventType.Layout` 時寫入 |
 | 失敗保護 | 找不到注入點時只停用工具列；各 patch 包在 try/catch |
@@ -163,7 +170,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
     *   能在本機解析的欄位立即寫入。
     *   其餘欄位打包成一次 API 請求：按鈕改為「處理中...」，並暫停「點視窗外即關閉」。
 4.  **套用：** 只覆寫未鎖定、且等待期間沒被玩家改過的欄位。
-5.  **確定：** 原版寫入 `Pawn.Name`。若玩家修改了模組給的譯名，把修正寫入個人快取。
+5.  **確定：** 原版寫入 `Pawn.Name`。`DoWindowContents` Postfix 以 `ReferenceEquals` 偵測到名字物件已換掉時，若玩家修改了模組給的譯名，把修正寫入個人快取。
 6.  **還原：** 未鎖定欄位恢復為開窗時的值。
 
 ### 5.4 資料契約（`NameRequestPayload`）
@@ -189,6 +196,8 @@ TestLog/    ✓ 測試機傳回的 Player.log
 5.  個人快取。
 6.  內建字典。
 7.  Gemini API：剩餘欄位集中成一次請求。
+
+**本機命中也要清理：** 快取與字典以小寫鍵查詢，例如「Ad」會查到「AD」，但原文只有大寫 A。每次命中都以實際原文跑 `NameSanitizer`，不通過就當作沒命中，往下一層查。
 
 **命名空間：** 名與姓共用 `name:`；暱稱用 `nick:`，查不到時不回退到 `name:`。
 
@@ -237,6 +246,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
 ### 6.4 個人快取與學習
 
 *   **檔案：** `GenFilePaths.ConfigFolderPath/RimTaiName_Cache.xml`，不放在 Mod 資料夾。
+*   **檔名與 Mod 資料夾：** RimWorld 的 Mod 設定檔名是 `Mod_<資料夾名>_RimTaiNameMod.xml`，所以開發版（junction）與 Workshop 版的設定不互通。快取檔與金鑰檔用固定檔名，兩版共用。
 *   **欄位：** namespace、key、value、origin（`api` 或 `user`）。
 *   **存檔時機：** 背景執行緒只更新記憶體（加 lock）；存檔一律在主執行緒進行。
 *   **學習：**
@@ -253,17 +263,20 @@ TestLog/    ✓ 測試機傳回的 Player.log
 *   **預設模型：** `gemini-3.5-flash-lite`；備選 `gemini-3.1-flash-lite`（預計 2027-05-07 停用）。設定頁可手填模型代號。
 *   **免費額度：** 官方不公布數字；以專案計，太平洋時間午夜重置（臺灣時間 15:00 或 16:00）。設計上不依賴任何額度數字。
 *   **用量控制：** 每次點擊最多 1 次請求；全域只允許 1 個請求在途；最短間隔預設 3 秒。
-*   **隱私告知：** 名字會送往 Google；免費層的內容會被用於改善產品。API Key 的保存與防護見第 9 節。
+*   **隱私告知：** 名字會送往 Google；免費層的內容會被用於改善產品。Gemini API 條款要求提供給 EEA、瑞士、英國使用者的應用只能使用付費服務，需在說明中告知。API Key 的保存與防護見第 9 節。
 
 ### 7.2 請求規格
 
 *   **端點：** `POST https://generativelanguage.googleapis.com/v1beta/interactions`
 *   **Header：** `x-goog-api-key`。金鑰不放在 URL，也不寫入任何記錄檔。
-*   **固定參數：** `store: false`；`response_format` 附 JSON Schema（`first`／`nick`／`last` 皆為必填字串）。
-*   **不傳：** `thinking_budget`、`thinking_level`、`temperature`、`top_p`、`top_k`。
-*   **讀取結果：** `steps[type=model_output].content[type=text].text`，再解析成 JSON。
+*   **請求內容：** `model`；`system_instruction`（純字串，放翻譯規則）；`input`（三欄資料，JSON 文字）。
+*   **固定參數：** `store: false`；`response_format` 為 `{"type":"text","mime_type":"application/json","schema":{…}}`，schema 中 `first`／`nick`／`last` 皆為必填字串。**注意：** schema 要包在 `response_format.schema` 裡，不是直接放在 `response_format`。
+*   **不傳：** `thinking_budget`、`thinking_level`、`temperature`、`top_p`、`top_k`。flash-lite 預設 `thinking_level = minimal`；取樣參數已於 2026-07-21 棄用，未來的模型收到會回 400。
+*   **讀取結果：** 從 `steps[]` 中找 `type == "model_output"` 的 step（前面可能有 `thought` step），串接其 `content[]` 中 `type == "text"` 的 `text`，再解析成 JSON。`status` 不是 `completed` 就視為失敗。
+*   **錯誤格式：** `{"error":{"code":"<snake_case 字串>","message":…}}`，`code` 是字串，不可當數字解析；舊式 API 的錯誤則是數字 code 加上 `status`。兩種都要能讀。
 *   **逾時與重試：** 逾時 15 秒；5xx 等 2 秒後重試 1 次；429 不重試，直接提示。
-*   **欄位細節：** 實作時再以官方 API reference 為準。
+*   **測試連線：** 送出一次極小的 Interactions 請求，一次驗證金鑰、模型、權限與額度。不使用 `GET models/{model}`：它的錯誤格式不同，而且回 200 也不代表能生成或還有額度。代價是每次用掉 1 次請求額度。
+*   **欄位細節：** Step 3 開工前再以官方 API reference 確認一次。
 
 ### 7.3 翻譯規則
 
@@ -293,7 +306,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
 3.  **雙重鎖定：** Prompt 告知已鎖定欄位；C# 寫入前也一律檢查鎖頭。
 4.  **輸出清理（`NameSanitizer`）：**
     *   NFKC 正規化 → `Trim` → 移除非法字元。
-    *   拉丁字母只允許原文中的大寫字母。
+    *   只允許 U+3400–4DBF、U+4E00–9FFF 的漢字，以及原文中出現的大寫字母。這也排除了原版會拒絕的 `·`、`・` 與 CJK 擴充 B 以後的字。
     *   結果為空或超長則該欄失敗，不截斷。
     *   最後再用 `ValidNameRegex` 驗證一次。
 5.  **反射：** 啟動時以 `AccessTools` 建立存取委派；不使用 Publicizer。
@@ -302,9 +315,13 @@ TestLog/    ✓ 測試機傳回的 Player.log
 | 情況 | 提示內容 |
 | :--- | :--- |
 | 未設定 API Key | 原版名字仍可用內建字典翻譯 |
-| 400／403 | 區分金鑰無效、無權使用模型、參數不支援 |
+| 400 | 請求錯誤，附上 `message` 前 200 字（先遮蔽金鑰） |
+| 401，或 400 且訊息提到 API key | 金鑰無效 |
+| 402 | 需要付費額度 |
+| 403 | 無權使用此模型，或金鑰受限 |
 | 404 | 模型代號不存在 |
-| 429 | 附上每日額度的重置時間 |
+| 429 `quota_exceeded` | 今日額度已用完，附上重置時間（太平洋時間午夜換算成本機時間） |
+| 其他 429（如 `rate_limit_exceeded`） | 請求太頻繁，稍後再試 |
 | 5xx、逾時、斷線 | 稍後再試 |
 
 7.  **焦點：** 實測證明保留焦點時寫入也能正確顯示；仍保留先 `UnfocusCurrentTextField()` 作為保險。
@@ -317,29 +334,30 @@ TestLog/    ✓ 測試機傳回的 Player.log
 
 | 外洩管道 | 防護 |
 | :--- | :--- |
-| 設定檔被分享 | 金鑰**不寫入** RimWorld 的 Mod 設定 XML，另存為 `Config/RimTaiName_ApiKey.dat`，並以 Windows DPAPI（`ProtectedData`，目前使用者範圍）加密。DPAPI 不可用時（例如 macOS／Linux），預設改為「只在本次遊戲期間記憶」，並在設定頁說明 |
-| 記錄檔外流（回報問題時附上 `Player.log`、HugsLib 的記錄上傳） | 任何記錄都不輸出金鑰、請求標頭或完整請求內容。例外訊息先經 `KeyRedactor` 遮蔽再記錄：金鑰本身與所有 `AIza…` 樣式的字串都換成「`AIza…` 加末 4 碼」 |
-| 畫面被看到（直播、截圖） | 輸入欄預設遮罩，只顯示末 4 碼；按「顯示」才露出完整金鑰，關閉設定頁即恢復遮罩 |
-| 金鑰被送到別處 | 端點寫死為 `https://generativelanguage.googleapis.com`。模型代號只允許 `^[a-z0-9.-]+$`，防止藉模型名稱改寫網址。關閉自動轉址（`AllowAutoRedirect = false`），避免金鑰跟著轉址送到其他網域。不覆寫 TLS 憑證驗證 |
+| 設定檔被分享 | 金鑰**不寫入** RimWorld 的 Mod 設定 XML，另存為 `Config/RimTaiName_ApiKey.dat`，並以 Windows DPAPI（`ProtectedData`，目前使用者範圍）加密。**非 Windows 平台一律**改為「只在本次遊戲期間記憶」，並在設定頁說明：Mono 在 macOS／Linux 會靜默改用防護較弱的 ManagedProtection，不會丟例外，所以不能靠「加解密是否成功」來判斷。解密失敗（`CryptographicException`，例如設定檔是從別台電腦複製來的）時視為沒有金鑰，並提示重新輸入 |
+| 記錄檔外流（回報問題時附上 `Player.log`、HugsLib 的記錄上傳） | 任何記錄都不輸出金鑰、請求標頭或完整請求內容。所有記錄先經 `KeyRedactor` 遮蔽：以已知金鑰的完整值為主，樣式比對為備援（`AIza[0-9A-Za-z_-]{35}`，以及 2026-05 起 AI Studio 新發的 `AQ.` 開頭金鑰 `AQ\.[0-9A-Za-z_.-]{20,}`），一律換成「前綴…末 4 碼」 |
+| 畫面被看到（直播、截圖） | 輸入欄用 `GUI.PasswordField` 遮罩；已儲存的金鑰只顯示「前綴…末 4 碼」；提供「貼上」按鈕，從剪貼簿直接存入、不經過畫面；按「顯示」才露出完整金鑰，關閉設定頁即恢復遮罩 |
+| 金鑰被送到別處 | 端點寫死為 `https://generativelanguage.googleapis.com`。模型代號只允許 `^[a-z0-9]+(?:[.-][a-z0-9]+)*$`（不允許 `/`、`?`、`..`），防止藉模型名稱改寫網址。關閉自動轉址（`AllowAutoRedirect = false`），避免金鑰跟著轉址送到其他網域。不覆寫 TLS 憑證驗證 |
 | 金鑰出現在網址 | 只放在 `x-goog-api-key` 標頭，絕不放進網址 |
 | 金鑰進入 Prompt | 送給模型的內容只有姓名與背景，模型無從回傳金鑰 |
-| 其他 Mod 讀取 | 金鑰不放在公開的靜態欄位或屬性；只有 `GeminiInteractionsClient` 在發送請求時從加密檔讀出，用完即丟。**限制：** 同一個遊戲行程中的惡意 Mod 理論上仍能讀取記憶體，這無法完全防止，會在說明中如實告知 |
+| 其他 Mod 讀取 | 金鑰不放在公開的靜態欄位或屬性。能讀取明文的只有三處：`ApiKeyStore` 內部（含供記錄遮蔽用的 `ApiKeyStore.Redact`）、`GeminiInteractionsClient`（透過注入的 `Func<string>`，送出請求時才取用，用完即丟）、設定頁按「顯示」時。**限制：** 同一個遊戲行程中的惡意 Mod 理論上仍能讀取記憶體，這無法完全防止，會在說明中如實告知 |
 | 存檔 | 不寫入存檔（本模組本來就不碰存檔） |
-| 開發者誤上傳 | 金鑰存在 Config 資料夾，不在 Mod 資料夾。打包腳本會掃描 `AIza[0-9A-Za-z_-]{35}`，發現就中止打包 |
+| 開發者誤上傳 | 金鑰存在 Config 資料夾，不在 Mod 資料夾。打包腳本會掃描 `AIza[0-9A-Za-z_-]{35}` 與 `AQ\.[0-9A-Za-z_.-]{20,}`，發現就中止打包 |
 | 背景連線 | 移除驗證版「啟動時自動連線」的測試。只有玩家按下按鈕才會連線，不做任何統計或回報 |
 
 **給玩家的建議**（寫在設定頁與 Workshop 說明）：
-*   在 Google AI Studio 為本模組建立一把專用金鑰。
-*   在 Google Cloud 主控台把這把金鑰限制為只能呼叫 Generative Language API。
+*   在 Google AI Studio 為本模組建立一把專用金鑰。2026-05 起新發的金鑰（`AQ.` 開頭）預設就只能呼叫 Gemini API；舊式 `AIza` 金鑰請在 Google Cloud 主控台限制為只能呼叫 Generative Language API。
 *   建在沒有啟用帳單的專案上。這樣只能用免費額度，即使金鑰外洩也不會產生費用，只是額度可能被別人用掉。
 *   懷疑外洩時，到 AI Studio 刪除金鑰並重建，再在設定頁按「清除金鑰」。
+*   免費層送出的內容會用於改善 Google 產品；EEA、瑞士、英國地區依條款只能使用付費服務。
+*   「測試連線」會用掉 1 次請求額度。
 
 **驗證項目：**
-*   `KeyRedactor` 的單元測試。
+*   `KeyRedactor` 的單元測試，涵蓋 `AIza` 與 `AQ.` 兩種格式。
 *   實機測試：輸入真實金鑰並翻譯，再故意製造錯誤（錯誤金鑰、斷網、不存在的模型），之後搜尋 `Player.log` 與 Config 資料夾內所有檔案，都不得出現金鑰明文。
 *   確認 Mod 設定 XML 不含金鑰，且 `RimTaiName_ApiKey.dat` 不是明文。
-*   用假金鑰測試打包腳本，必須中止。
-*   程式碼審查：確認只有 `GeminiInteractionsClient` 會讀取金鑰。
+*   用 `AIza` 與 `AQ.` 兩種假金鑰測試打包腳本，都必須中止。
+*   程式碼審查：確認只有上表「其他 Mod 讀取」列出的三處會讀取金鑰明文。
 
 ---
 
@@ -353,7 +371,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
 
 **測試環境：**
 *   **開發機：** `D:\SteamLibrary`，Mod 以 junction 連到專案資料夾。
-*   **測試機：** 另一台電腦，RimWorld 位於 `E:\`，載入 386 個 Mod，Harmony 版本為 2.4.2。
+*   **測試機：** 另一台電腦，RimWorld 位於 `E:\`，載入 386 個 Mod，Harmony 版本為 2.4.2。開發機編譯時引用的 Harmony 是 2.4.3，因此只使用 2.4.2 已有的 API。
 *   **回傳記錄檔：** 測試後把 `Player.log` 放到專案的 `TestLog/`。
 
 **打包：**
@@ -371,57 +389,61 @@ TestLog/    ✓ 測試機傳回的 Player.log
 
 ### Step 0 收尾
 *   **新生兒命名視窗：** 確認鎖頭與工具列的位置，以及姓欄的「建議...」不受影響。
-*   **驗證：** 測試機有嬰兒出生時開啟出生信件，回傳 `Player.log`。
+*   **程式修改：** 鎖頭改用 `NewCol(24f, HorizontalJustification.Right)` 靠右對齊。
+*   **驗證：** 開發者模式下開啟改名視窗即為新生兒版（4.2），不必等嬰兒出生。測三種情況：
+    *   有具名父母的小人：姓欄有「建議...」。
+    *   沒有具名父母的小人：姓欄沒有按鈕。
+    *   關閉開發者模式的成年殖民者。
 
-### Step 1：基礎建設、設定頁與 API Key
+    與 Step 1 一起送測試機，並回傳 `Player.log`。
+
+### Step 1：基礎建設、設定頁、API Key 與 Gemini 傳輸層
 *   **檔案：**
     *   `Core/RimTaiNameSettings.cs`：模型代號、最短間隔、「保留原版稱呼」。**不含金鑰。**
-    *   `Core/ApiKeyStore.cs`：金鑰的加密儲存、讀取、清除。先用 DPAPI；不可用時改為只在本次遊戲期間記憶。
-    *   `Core/KeyRedactor.cs`：寫入記錄前遮蔽金鑰。
+    *   `Core/ApiKeyStore.cs`：金鑰的加密儲存、讀取、清除。Windows 用 DPAPI；其他平台一律只在本次遊戲期間記憶（第 9 節）。
+    *   `Core/KeyRedactor.cs`、`Core/ModLog.cs`：寫入記錄前遮蔽金鑰。
     *   `RimTaiNameMod.DoSettingsWindowContents`：設定頁，包含
-        *   API Key 欄位：遮罩、顯示切換、貼上、清除。
+        *   API Key 欄位：`PasswordField` 遮罩、顯示切換、貼上、清除。
         *   「測試連線」按鈕。
+        *   模型代號（`Widgets.TextField`，上限 64 字，以正規表示式驗證）。
         *   隱私與金鑰安全說明（第 9 節的建議）。
     *   `Pipeline/PersonalNameCache.cs`。
-    *   `Tools/package_mod.ps1`：含金鑰掃描。
-*   **重用：** 把 `Spike/ConnectivityProbe.cs` 改寫成「測試連線」：
-    *   帶金鑰呼叫模型清單 API，一次驗證金鑰與模型代號。
-    *   設定 `AllowAutoRedirect = false`。
-    *   **移除啟動時自動連線。**
-*   **先行驗證：** 在 RimWorld 的 Mono 環境實測 `ProtectedData` 能否使用（本機與測試機都要測），再決定預設的儲存方式。
+    *   `Llm/MiniJson.cs`、`Llm/GeminiInteractionsClient.cs`（傳輸層、錯誤分類、測試連線）、`Llm/QuotaResetClock.cs`。
+    *   `Source/RimTaiName.Tests`：xUnit 測試專案（建立前先徵求同意下載 NuGet 套件）。
+    *   `Tools/package_mod.ps1`：含金鑰掃描；不存在的資料夾直接跳過。
+*   **不重用驗證版：** 直接把「測試連線」寫在正式的 `GeminiInteractionsClient`（7.2），刪除 `Spike/`，也**移除啟動時自動連線**。
 *   **驗證：**
-    *   設定可存可讀。
-    *   「測試連線」能分辨三種情況：金鑰正確、金鑰錯誤、模型不存在。
+    *   設定可存可讀；本機與測試機的設定頁都顯示 DPAPI。
+    *   「測試連線」能分辨：金鑰正確、金鑰錯誤、模型不存在。
     *   快取檔出現在 Config 資料夾。
+    *   `dotnet test` 全數通過。
     *   打包出的資料夾在測試機能直接載入。
     *   第 9 節的金鑰驗證項目全部通過。
 
 ### Step 2：翻譯管線（純 C#）＋ 單元測試
 *   **檔案：** `Pipeline/` 下的 `NameKey`、`SpecialFormRule`、`NickAliasResolver`、`NameSanitizer`、`BuiltInDictionary`、`NameProcessorService`。
 *   **重用：** `SpecialFormRule` 與 `NameSanitizer` 的規則要與 `Tools/name_rules.py` 的 `special_form()`、`latin_ok()`、`check()` 完全一致。
-*   **測試專案 `Source/RimTaiName.Tests`：**
-    *   xUnit，`net10.0`，以連結方式編譯 `Pipeline/` 原始碼。
-    *   需要從 NuGet 下載 `xunit`、`xunit.runner.visualstudio`、`Microsoft.NET.Test.Sdk`，建立時先徵求同意。
+*   **測試專案 `Source/RimTaiName.Tests`**（Step 1 建立）：xUnit，`net10.0`，以連結方式編譯 `Pipeline/`、`Llm/` 與 `Core/KeyRedactor.cs`。
 *   **測試內容：**
     *   暱稱的四種來源與空白暱稱。
     *   各種鎖定組合。
     *   非法字元、超長、拉丁字母規則。
     *   `name:` 與 `nick:` 命名空間隔離。
+    *   本機命中值與原文大小寫不符時（「Ad」查到「AD」）視為沒命中。
     *   **與 Python 一致性：** 從字典匯出測試資料，確認 C# 的特殊字形與檢查結果和 Python 相同。
 *   **驗證：** `dotnet test` 全數通過；`dotnet build` 主專案仍 0 警告、0 錯誤。
 
-### Step 3：Gemini 用戶端
-*   **檔案：** `Llm/` 下的 `ILlmClient`、`GeminiInteractionsClient`、`MiniJson`、`PromptBuilder`；`Prompts/NameRules_zhTW.txt`（從 `name_rules.py` 移出規則文字）。
-*   **金鑰相關要求（第 9 節）：**
-    *   端點寫死，模型代號用正規表示式驗證。
-    *   關閉自動轉址。
-    *   金鑰只經由 `ApiKeyStore` 取得，只放在標頭。
-    *   所有例外訊息都經 `KeyRedactor` 遮蔽後才記錄。
+### Step 3：Gemini 翻譯請求
+*   **範圍：** 傳輸層、錯誤分類與金鑰防護已在 Step 1 完成，這一步只做翻譯本身。
+*   **檔案：**
+    *   `Prompts/NameRules_zhTW.txt`：從 `name_rules.py` 移出規則文字；`name_rules.py` 改為讀取它，組出的字串須與移出前逐字相同。
+    *   `Llm/PromptBuilder.cs`：`system_instruction`、`input` 與 `response_format`（7.2 的格式）。
+    *   `GeminiInteractionsClient.TranslateAsync`（實作 `ILlmClient`）。
+    *   `Llm/RequestGate.cs`：全域 1 個請求在途、最短間隔。
 *   **驗證：**
-    *   單元測試用模擬回應測解析與錯誤分類。
-    *   單元測試：模型代號含 `/`、`?`、`..` 時拒絕送出。
+    *   單元測試：Prompt 組裝、回應解析（非 JSON、缺欄位）、`RequestGate`。
     *   遊戲內用你的金鑰實際翻譯一次。
-    *   全文搜尋 `Player.log` 與 Config 資料夾，確認沒有金鑰明文。
+    *   故意製造錯誤後，全文搜尋 `Player.log` 與 Config 資料夾，確認沒有金鑰明文。
 
 ### Step 4：命名視窗正式版
 *   **檔案：** 改寫 `UI_Patches/`：
@@ -433,6 +455,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
     *   等待中按 ESC、點視窗外、按 Enter。
     *   全鎖定、部分鎖定、還原。
     *   沒有 API Key 時只靠字典。
+    *   全形字母（ＭＪ）與帶重音的名字（André），確認遊戲內的 Unicode 正規化正常。
     *   在測試機的 386 個 Mod 環境下正常運作。
 
 ### Step 5：字典 v1.0
@@ -450,8 +473,9 @@ TestLog/    ✓ 測試機傳回的 Player.log
 *   製作 `Preview.png`。
 *   撰寫 Workshop 說明：
     *   功能介紹，並說明「不需金鑰即可翻譯原版名字」。
-    *   API Key 申請教學，以及第 9 節的金鑰安全建議。
-    *   隱私與額度說明。
+    *   API Key 申請教學（新金鑰以 `AQ.` 開頭），以及第 9 節的金鑰安全建議。
+    *   隱私與額度說明，包括 EEA、瑞士、英國的條款限制。
+    *   開發版與 Workshop 版的設定不互通，但金鑰與快取共用。
 *   以 `Tools/package_mod.ps1` 打包，金鑰掃描必須通過後才上傳。
 *   1.7 unstable 實測通過後更新 `supportedVersions` 與 `LoadFolders.xml`。
 
@@ -470,6 +494,27 @@ TestLog/    ✓ 測試機傳回的 Player.log
 *   補上字典 v0.1、特殊字形規則、官方優先政策，以及 Step 0 驗證結果。
 *   建置改為直接引用遊戲 DLL；測試採 xUnit；翻譯規則改為 C# 與 Python 共用一份檔案。
 *   新增打包腳本與測試機流程。
+
+**實作計畫重審（2026-10-16）：** 以本機 1.6.4871 的反射與 IL、以及 Gemini 官方文件（10-16 版）重新查證後修正：
+*   **遊戲：**
+    *   開發者模式會開出新生兒版視窗，Step 0 收尾改用它測試。
+    *   姓欄「建議」清單為空時不畫按鈕，鎖頭改為靠右對齊。
+    *   `BuildName` 每次建立新物件，以 `ReferenceEquals` 偵測「確定」。
+    *   `ValidNameRegex` 會擋 `·` 與 CJK 擴充 B 以後的字。
+    *   設定檔名與 Mod 資料夾名稱相關。
+*   **Gemini：**
+    *   `response_format` 改為 `{type, mime_type, schema}` 結構。
+    *   規則放 `system_instruction`。
+    *   Interactions 的錯誤 code 是字串；429 區分 `quota_exceeded` 與 `rate_limit_exceeded`。
+    *   測試連線改用一次極小的 Interactions 請求。
+*   **API Key：**
+    *   新金鑰為 `AQ.` 開頭，遮蔽與打包掃描都要涵蓋。
+    *   模型代號正規表示式改為 `^[a-z0-9]+(?:[.-][a-z0-9]+)*$`。
+    *   非 Windows 一律只在本次遊戲期間記憶；解密失敗時視為沒有金鑰。
+    *   可讀取金鑰明文的地方限定為三處。
+    *   給玩家的建議加入條款與資料使用說明。
+*   **管線：** 本機命中值也要以實際原文跑 `NameSanitizer`。
+*   **路線圖：** Gemini 傳輸層與測試專案移到 Step 1，Step 3 只做翻譯請求。
 
 ## 附錄 B：相關文件
 
