@@ -34,6 +34,16 @@ namespace RimTaiName
             // The only place the plain key is handed to network code (see CLAUDE.md "API Key 規則").
             Gemini = new GeminiInteractionsClient(ApiKeyStore.Read);
 
+            // Loaded on first lookup; a missing file only weakens translation (see LoadError).
+            Dictionary = new BuiltInDictionary(Path.Combine(content.RootDir, "Dictionary", "BaseNames_zhTW.tsv"));
+            Processor = new NameProcessorService(Dictionary, Cache);
+            string rules = PromptBuilder.LoadRules(Path.Combine(content.RootDir, "Prompts", PromptBuilder.RulesFileName), out string rulesError);
+            if (rules == null)
+                ModLog.Warning("translation rules could not be read, using the minimum built-in rules: " + rulesError);
+            Prompts = new PromptBuilder(rules);
+            Translator = new GeminiNameTranslator(Gemini, Prompts, () => Settings.modelId);
+            Gate = new RequestGate();
+
             var harmony = new Harmony(HarmonyId);
             // Patch each class on its own so one failing patch never takes the others (or vanilla) down.
             foreach (var type in AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly()))
@@ -60,9 +70,33 @@ namespace RimTaiName
 
         public static GeminiInteractionsClient Gemini { get; private set; }
 
+        public static BuiltInDictionary Dictionary { get; private set; }
+
+        public static NameProcessorService Processor { get; private set; }
+
+        public static PromptBuilder Prompts { get; private set; }
+
+        /// <summary>Translation requests for the pipeline (ILlmClient).</summary>
+        public static GeminiNameTranslator Translator { get; private set; }
+
+        /// <summary>One Gemini request at a time, spaced by the configured minimum interval.</summary>
+        public static RequestGate Gate { get; private set; }
+
+        /// <summary>
+        /// Main thread: claims the request gate with the current minimum interval. Returns a lease to dispose when
+        /// the request ends, or null with a player-facing <paramref name="refusal"/>.
+        /// </summary>
+        public static IDisposable TryEnterGate(out string refusal)
+        {
+            Gate.MinInterval = TimeSpan.FromSeconds(Settings.minIntervalSeconds);
+            IDisposable lease = Gate.TryEnter(out GateDenial denial, out TimeSpan wait);
+            refusal = lease == null ? GeminiMessages.DescribeDenial(denial, wait) : null;
+            return lease;
+        }
+
         public override string SettingsCategory() => "RimTaiName";
 
-        public override void DoSettingsWindowContents(Rect inRect) => SettingsPage.Draw(inRect, Settings, Cache, Gemini);
+        public override void DoSettingsWindowContents(Rect inRect) => SettingsPage.Draw(inRect);
 
         /// <summary>Called when the settings window closes.</summary>
         public override void WriteSettings()

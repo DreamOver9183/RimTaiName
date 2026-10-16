@@ -23,6 +23,23 @@
   <RimTaiName_Gemini_UnexpectedStatus>Gemini 回傳了非預期的狀態（HTTP {0}）。</RimTaiName_Gemini_UnexpectedStatus>
   <RimTaiName_Gemini_InvalidResponse>Gemini 的回應無法解析，請稍後再試。</RimTaiName_Gemini_InvalidResponse>
 
+  <!-- 請求限制 -->
+  <RimTaiName_Gate_Busy>已有一個 Gemini 請求在進行中，請稍候。</RimTaiName_Gate_Busy>
+  <RimTaiName_Gate_TooSoon>請求太頻繁，請 {0} 秒後再試。</RimTaiName_Gate_TooSoon>
+
+  <!-- 欄位與翻譯來源 -->
+  <RimTaiName_Field_First>名</RimTaiName_Field_First>
+  <RimTaiName_Field_Nick>暱稱</RimTaiName_Field_Nick>
+  <RimTaiName_Field_Last>姓</RimTaiName_Field_Last>
+  <RimTaiName_Source_Unchanged>不變</RimTaiName_Source_Unchanged>
+  <RimTaiName_Source_SpecialForm>特殊字形</RimTaiName_Source_SpecialForm>
+  <RimTaiName_Source_Alias>對應名或姓</RimTaiName_Source_Alias>
+  <RimTaiName_Source_PersonalCache>個人快取</RimTaiName_Source_PersonalCache>
+  <RimTaiName_Source_Dictionary>內建字典</RimTaiName_Source_Dictionary>
+  <RimTaiName_Source_Api>Gemini</RimTaiName_Source_Api>
+  <RimTaiName_Source_Failed>失敗</RimTaiName_Source_Failed>
+  <RimTaiName_Source_Pending>等待中</RimTaiName_Source_Pending>
+
   <!-- 設定頁：API Key -->
   <RimTaiName_Settings_KeyHeading>Gemini API Key</RimTaiName_Settings_KeyHeading>
   <RimTaiName_Settings_KeySaved>已儲存的金鑰：{0}</RimTaiName_Settings_KeySaved>
@@ -63,6 +80,16 @@
   <RimTaiName_Settings_CacheClear>清除快取</RimTaiName_Settings_CacheClear>
   <RimTaiName_Settings_CacheClearConfirm>確定要清除全部 {0} 筆個人快取嗎？你自己修正的譯名也會一併刪除，且無法復原。</RimTaiName_Settings_CacheClearConfirm>
   <RimTaiName_Settings_CacheOpenFolder>開啟設定資料夾</RimTaiName_Settings_CacheOpenFolder>
+
+  <!-- 設定頁：開發者 -->
+  <RimTaiName_Settings_DevHeading>開發者：翻譯測試</RimTaiName_Settings_DevHeading>
+  <RimTaiName_Settings_DevStatus>內建字典 {0} 筆；翻譯規則檔：{1}</RimTaiName_Settings_DevStatus>
+  <RimTaiName_Settings_DevRulesOk>已載入</RimTaiName_Settings_DevRulesOk>
+  <RimTaiName_Settings_DevRulesMissing>找不到（改用最少規則）</RimTaiName_Settings_DevRulesMissing>
+  <RimTaiName_Settings_DevDictError>字典載入失敗：{0}</RimTaiName_Settings_DevDictError>
+  <RimTaiName_Settings_DevTranslate>翻譯測試</RimTaiName_Settings_DevTranslate>
+  <RimTaiName_Settings_DevNote>依序輸入名、暱稱、姓。會走完整的翻譯流程；字典查不到的欄位會送出 1 次 Gemini 請求。</RimTaiName_Settings_DevNote>
+  <RimTaiName_Settings_DevField>{0}：{1} → {2}（{3}）</RimTaiName_Settings_DevField>
 
   <!-- 設定頁：隱私 -->
   <RimTaiName_Settings_PrivacyHeading>隱私與金鑰安全</RimTaiName_Settings_PrivacyHeading>

@@ -1,6 +1,5 @@
 using System;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using RimTaiName.Llm;
 using RimTaiName.Pipeline;
@@ -10,8 +9,8 @@ using Verse;
 namespace RimTaiName.Core
 {
     /// <summary>
-    /// The mod settings page. Drawn on the main thread; the connection test runs on a worker thread and only
-    /// hands a <see cref="GeminiResult"/> back through a volatile field.
+    /// The mod settings page. Drawn on the main thread; network requests run as <see cref="UiJob{T}"/>s behind the
+    /// shared <see cref="RequestGate"/>.
     /// </summary>
     internal static class SettingsPage
     {
@@ -23,11 +22,19 @@ namespace RimTaiName.Core
 
         private const int KeyFieldMaxLength = 256;
 
+        private const int DevFieldMaxLength = 40;
+
         /// <summary>Room for a pasted "models/" prefix; anything longer is rejected by the text field.</summary>
         private const int ModelFieldMaxLength = ModelId.MaxLength + 16;
 
         /// <summary>Model ids are ASCII; refusing everything else also keeps surrogate pairs out of the field.</summary>
         private static readonly Regex PrintableAscii = new Regex(@"^[\x20-\x7E]*$");
+
+        /// <summary>Connection test.</summary>
+        private static readonly UiJob<GeminiResult> Check = new UiJob<GeminiResult>();
+
+        /// <summary>Developer translation test through the whole pipeline.</summary>
+        private static readonly UiJob<NameResult> DevTranslate = new UiJob<NameResult>();
 
         private static Vector2 scroll;
 
@@ -44,19 +51,14 @@ namespace RimTaiName.Core
 
         private static string modelBuffer;
 
-        private static volatile bool checking;
+        private static string devFeedback;
 
-        private static volatile GeminiResult checkResult;
+        // Invented names that are not in the dictionary, so the test reaches Gemini.
+        private static readonly string[] DevInput = { "Zorbalith", "Quickfang", "Vexmoor" };
 
-        private static bool checkLogged = true;
-
-        /// <summary>Bumped whenever a test starts or is abandoned, so a late result from an old test is dropped.</summary>
-        private static int checkGeneration;
-
-        private static CancellationTokenSource checkCancellation;
-
-        public static void Draw(Rect inRect, RimTaiNameSettings settings, PersonalNameCache cache, GeminiInteractionsClient gemini)
+        public static void Draw(Rect inRect)
         {
+            RimTaiNameSettings settings = RimTaiNameMod.Settings;
             if (modelBuffer == null)
                 modelBuffer = settings.modelId;
             var view = new Rect(0f, 0f, inRect.width - 16f, viewHeight);
@@ -69,10 +71,12 @@ namespace RimTaiName.Core
             try
             {
                 // Each section is isolated: one failing section is logged once and the rest still draws.
-                DrawSection("key", 0x52544e10, () => DrawKeySection(list, settings, gemini));
+                DrawSection("key", 0x52544e10, () => DrawKeySection(list, settings));
                 DrawSection("model", 0x52544e11, () => DrawModelSection(list, settings));
-                DrawSection("cache", 0x52544e12, () => DrawCacheSection(list, cache));
+                DrawSection("cache", 0x52544e12, () => DrawCacheSection(list, RimTaiNameMod.Cache));
                 DrawSection("privacy", 0x52544e13, () => DrawPrivacySection(list));
+                if (Prefs.DevMode)
+                    DrawSection("dev", 0x52544e14, () => DrawDevSection(list, settings));
                 viewHeight = Mathf.Max(list.CurHeight + 20f, 100f);
             }
             finally
@@ -84,6 +88,18 @@ namespace RimTaiName.Core
                 list.End();
                 Widgets.EndScrollView();
             }
+        }
+
+        /// <summary>Called when the settings window closes: forget typed text, re-mask the key, stop running requests.</summary>
+        public static void OnClosed()
+        {
+            keyInput = string.Empty;
+            revealKey = false;
+            feedback = null;
+            devFeedback = null;
+            modelBuffer = null;
+            Check.Reset();
+            DevTranslate.Reset();
         }
 
         private static void DrawSection(string name, int logKey, Action draw)
@@ -108,16 +124,6 @@ namespace RimTaiName.Core
             }
         }
 
-        /// <summary>Called when the settings window closes: forget typed text, re-mask the key, stop a running test.</summary>
-        public static void OnClosed()
-        {
-            keyInput = string.Empty;
-            revealKey = false;
-            feedback = null;
-            modelBuffer = null;
-            ResetCheck();
-        }
-
         private static void Heading(Listing_Standard list, string key)
         {
             list.Gap(8f);
@@ -135,7 +141,7 @@ namespace RimTaiName.Core
             GUI.color = previous;
         }
 
-        private static void DrawKeySection(Listing_Standard list, RimTaiNameSettings settings, GeminiInteractionsClient gemini)
+        private static void DrawKeySection(Listing_Standard list, RimTaiNameSettings settings)
         {
             Heading(list, "RimTaiName_Settings_KeyHeading");
 
@@ -171,7 +177,7 @@ namespace RimTaiName.Core
             {
                 ApiKeyStore.Clear();
                 keyInput = string.Empty;
-                ResetCheck();
+                Check.Reset();
                 SetFeedback("RimTaiName_Settings_KeyCleared".Translate(), false);
             }
             if (feedback != null)
@@ -179,22 +185,19 @@ namespace RimTaiName.Core
 
             list.Gap(4f);
             Rect testRow = list.GetRect(RowHeight);
-            bool canTest = !checking && ApiKeyStore.HasKey;
+            bool canTest = !Check.Running && ApiKeyStore.HasKey;
             if (Widgets.ButtonText(new Rect(testRow.x, testRow.y, ButtonWidth * 1.5f, RowHeight),
-                    checking ? "RimTaiName_Settings_Testing".Translate() : "RimTaiName_Settings_Test".Translate(),
+                    Check.Running ? "RimTaiName_Settings_Testing".Translate() : "RimTaiName_Settings_Test".Translate(),
                     active: canTest))
-                StartCheck(gemini, settings.modelId);
+                StartCheck(settings.modelId);
             Widgets.Label(new Rect(testRow.x + ButtonWidth * 1.5f + Gap, testRow.y + 4f, testRow.width - ButtonWidth * 1.5f - Gap, RowHeight),
                 "RimTaiName_Settings_TestNote".Translate());
-            GeminiResult result = checkResult;
-            if (!checking && result != null)
+            GeminiResult result = Check.Result;
+            if (result != null)
             {
                 ColoredLabel(list, GeminiMessages.Describe(result), result.Success ? ColorLibrary.Green : ColorLibrary.RedReadable);
-                if (!checkLogged)
-                {
-                    checkLogged = true;
+                if (Check.TakeNewResult())
                     ModLog.Message($"connection test: {result.Error} (HTTP {result.StatusCode}) {result.Detail}");
-                }
             }
         }
 
@@ -254,6 +257,53 @@ namespace RimTaiName.Core
             list.Label("RimTaiName_Settings_PrivacyText".Translate());
         }
 
+        /// <summary>Developer mode only: run three names through the whole pipeline (Step 3 verification).</summary>
+        private static void DrawDevSection(Listing_Standard list, RimTaiNameSettings settings)
+        {
+            Heading(list, "RimTaiName_Settings_DevHeading");
+            BuiltInDictionary dictionary = RimTaiNameMod.Dictionary;
+            list.Label("RimTaiName_Settings_DevStatus".Translate(
+                dictionary.Count,
+                (RimTaiNameMod.Prompts.HasSharedRules ? "RimTaiName_Settings_DevRulesOk" : "RimTaiName_Settings_DevRulesMissing").Translate()));
+            if (dictionary.LoadError != null)
+                ColoredLabel(list, "RimTaiName_Settings_DevDictError".Translate(dictionary.LoadError), ColorLibrary.RedReadable);
+
+            Rect row = list.GetRect(RowHeight);
+            float fieldWidth = (row.width - ButtonWidth * 1.5f - 3f * Gap) / 3f;
+            for (int i = 0; i < NameFields.Count; i++)
+            {
+                var field = new Rect(row.x + i * (fieldWidth + Gap), row.y, fieldWidth, RowHeight);
+                DevInput[i] = Widgets.TextField(field, DevInput[i] ?? string.Empty, DevFieldMaxLength);
+            }
+            if (Widgets.ButtonText(new Rect(row.xMax - ButtonWidth * 1.5f, row.y, ButtonWidth * 1.5f, RowHeight),
+                    DevTranslate.Running ? "RimTaiName_Settings_Testing".Translate() : "RimTaiName_Settings_DevTranslate".Translate(),
+                    active: !DevTranslate.Running))
+                StartDevTranslate(settings);
+            ColoredLabel(list, "RimTaiName_Settings_DevNote".Translate(), Color.gray);
+            if (devFeedback != null)
+                ColoredLabel(list, devFeedback, ColorLibrary.RedReadable);
+
+            NameResult result = DevTranslate.Result;
+            if (result == null)
+                return;
+            foreach (NameField field in NameFields.All)
+            {
+                FieldResult f = result[field];
+                string shown = f.HasNewValue ? f.Value : "-";
+                list.Label("RimTaiName_Settings_DevField".Translate(
+                    ("RimTaiName_Field_" + field).Translate(), f.SourceText ?? string.Empty, shown, ("RimTaiName_Source_" + f.Source).Translate()));
+            }
+            if (result.RemoteError != GeminiErrorKind.None)
+                ColoredLabel(list, GeminiMessages.Describe(result.RemoteError, result.RemoteStatusCode, result.RemoteDetail), ColorLibrary.RedReadable);
+            if (DevTranslate.TakeNewResult())
+            {
+                if (!RimTaiNameMod.Cache.SaveIfDirty())
+                    ModLog.Warning("personal cache could not be saved: " + RimTaiNameMod.Cache.LastError);
+                ModLog.Message($"dev translate: {result[NameField.First].Source}/{result[NameField.Nick].Source}/{result[NameField.Last].Source}, " +
+                               $"remote {result.RemoteError} (HTTP {result.RemoteStatusCode})");
+            }
+        }
+
         private static void ToggleReveal()
         {
             revealKey = !revealKey;
@@ -270,7 +320,7 @@ namespace RimTaiName.Core
                 if (clearInput)
                     keyInput = string.Empty;
                 revealKey = false;
-                ResetCheck(); // a result for the previous key would be misleading
+                Check.Reset(); // a result for the previous key would be misleading
                 SetFeedback("RimTaiName_Settings_KeySavedNow".Translate(ApiKeyStore.MaskedHint), false);
             }
             else
@@ -286,51 +336,52 @@ namespace RimTaiName.Core
         }
 
         /// <summary>Main thread. Logging happens when the result is first drawn, because Verse.Log is a game API.</summary>
-        private static void StartCheck(GeminiInteractionsClient gemini, string modelId)
+        private static void StartCheck(string modelId)
         {
-            ResetCheck();
-            int generation = checkGeneration;
-            var cancellation = new CancellationTokenSource();
-            CancellationToken token = cancellation.Token;
-            checkCancellation = cancellation;
-            checking = true;
-            checkLogged = false;
-            Task.Run(async () =>
+            IDisposable lease = RimTaiNameMod.TryEnterGate(out string refusal);
+            if (lease == null)
             {
-                GeminiResult result;
-                try
-                {
-                    result = await gemini.CheckAsync(modelId, token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    return; // abandoned by ResetCheck
-                }
-                catch (Exception e)
-                {
-                    result = GeminiResult.Fail(GeminiErrorKind.Network, 0, e.GetType().Name);
-                }
-                if (Volatile.Read(ref checkGeneration) != generation)
-                    return;
-                checkResult = result;
-                checking = false;
-            });
+                SetFeedback(refusal, true);
+                return;
+            }
+            GeminiInteractionsClient gemini = RimTaiNameMod.Gemini;
+            Check.Start(token => gemini.CheckAsync(modelId, token), lease,
+                        e => GeminiResult.Fail(GeminiErrorKind.Network, 0, e.GetType().Name));
         }
 
-        /// <summary>Main thread: cancels a running test and forgets its result (key changed, page closed).</summary>
-        private static void ResetCheck()
+        /// <summary>Main thread: local resolution now, then (if needed and allowed) one Gemini request.</summary>
+        private static void StartDevTranslate(RimTaiNameSettings settings)
         {
-            Interlocked.Increment(ref checkGeneration);
-            CancellationTokenSource running = checkCancellation;
-            checkCancellation = null;
-            if (running != null)
+            devFeedback = null;
+            string first = DevInput[0], nick = DevInput[1], last = DevInput[2];
+            var payload = new NameRequestPayload(first, nick, last)
             {
-                running.Cancel();
-                running.Dispose();
+                KeepVanillaAddress = settings.keepVanillaAddress,
+                NickSource = NickAliasResolver.Determine(first, nick, last, !string.IsNullOrWhiteSpace(nick), nick),
+            };
+            NameProcessorService processor = RimTaiNameMod.Processor;
+            NameResult local = processor.ResolveLocal(payload);
+            IDisposable lease = null;
+            if (local.HasPending)
+            {
+                if (!ApiKeyStore.HasKey)
+                {
+                    DevTranslate.Start(_ => Task.FromResult(WithError(local, GeminiErrorKind.NoKey)), null, _ => local);
+                    return;
+                }
+                lease = RimTaiNameMod.TryEnterGate(out string refusal);
+                if (lease == null)
+                {
+                    devFeedback = refusal;
+                    return;
+                }
             }
-            checking = false;
-            checkResult = null;
-            checkLogged = true;
+            GeminiNameTranslator translator = RimTaiNameMod.Translator;
+            DevTranslate.Start(token => processor.ResolveRemoteAsync(payload, local, translator, token), lease,
+                               e => WithError(local, GeminiErrorKind.InvalidResponse, e.GetType().Name));
         }
+
+        private static NameResult WithError(NameResult local, GeminiErrorKind error, string detail = null) =>
+            new NameResult(local[NameField.First], local[NameField.Nick], local[NameField.Last], error, 0, detail);
     }
 }
