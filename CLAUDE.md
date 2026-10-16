@@ -29,10 +29,11 @@ Source/RimTaiName/
 ├── Core/        Mod 進入點（建立所有服務）、設定與設定頁、ApiKeyStore、KeyRedactor、ModLog、UiJob、GeminiMessages
 │                （可用遊戲型別；KeyRedactor、UiJob 除外）
 ├── Pipeline/    翻譯管線，純 C#：NameKey、SpecialFormRule、NameSanitizer、BuiltInDictionary、PersonalNameCache、
-│                NickAliasResolver、NameProcessorService、NameRequest（資料契約）
+│                NickAliasResolver、NameProcessorService、NameRequest（資料契約）、NameDialogSession（命名視窗的狀態判斷）
 ├── Llm/         Gemini，純 C#：GeminiInteractionsClient（傳輸）、GeminiNameTranslator（ILlmClient）、PromptBuilder、
 │                RequestGate、MiniJson、ModelId、QuotaResetClock
-└── UI_Patches/  Harmony patch 與視窗狀態（遊戲型別）
+└── UI_Patches/  Harmony patch（Patch_Dialog_NamePawn）、反射存取（NamePawnAccess）、視窗狀態（DialogState）、
+                 翻譯／還原／學習流程（DialogTranslation）；遊戲型別
 Prompts/NameRules_zhTW.txt  翻譯規則（C# 與 Python 共用）
 Source/RimTaiName.Tests/   xUnit，net10.0，以連結方式編譯 Pipeline/**、Llm/**、Core/KeyRedactor.cs、Core/UiJob.cs
 ```
@@ -106,6 +107,11 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   **逐類別套用 Harmony patch：** `RimTaiNameMod` 建構子對每個 `[HarmonyPatch]` 類別分別 `CreateClassProcessor(type).Patch()` 並 try/catch，一個失敗不影響其他。
 *   **反射存取：** `NamePawnAccess` 在啟動時以 `AccessTools.FieldRefAccess` 建立委派（私有巢狀類別 `NameContext` 用 `AccessTools.Inner`），不使用 Publicizer。
 *   **每個視窗的狀態：** `ConditionalWeakTable<Dialog_NamePawn, DialogState>`；`DialogStateRegistry.Drawing` 記錄目前正在繪製的視窗（IMGUI 單執行緒）。
+*   **視窗邏輯分兩層：** 不需要遊戲型別的判斷放 `Pipeline/NameDialogSession` 並寫單元測試，包括要寫哪些欄位、晚到的結果能不能套用、什麼算玩家修正。`UI_Patches/DialogTranslation` 只負責讀寫 `NameContext`、顯示訊息、管理 `UiJob` 與視窗旗標。
+*   **晚到的結果：** 請求開始時記下每欄「本機寫入後」的內容；結果只寫入未鎖定、且內容仍相同的欄位。「還原」會讓之後到的結果作廢，只進快取。視窗關閉後請求照常跑完（不 `Reset`），結果寫進記憶體快取，下次開窗時存檔。
+*   **等待中暫停點外關閉：** 送出請求時把 `closeOnClickedOutside` 存起來並設為 false。之後在 Layout 事件看到 `Job.Running` 變成 false 就恢復，不依賴有沒有結果（`onError` 也失敗時，`Job` 不會有結果）。
+*   **偵測「確定」：** 在 `DoWindowContents` Postfix 檢查 `!ReferenceEquals(pawn.Name, OriginalName) && !dialog.IsOpen`，並以旗標確保只學習一次。學習時讀 `NameTriple`；暱稱要用 `NickSet ? Nick : ""`，因為 `Nick` 未設定時會回傳名或姓。
+*   **玩家看到的欄位清單：** `GenText.ToCommaList(useAnd: true)` 會使用語言檔的 `ToCommaListAnd`，例如「名和姓」，不要自己用頓號串接。
 *   **寫入文字框：** 只在 `DoWindowContents` Prefix 且 `Event.current.type == EventType.Layout` 時寫入 `NameContext.current`，寫入前先 `UI.UnfocusCurrentTextField()`。
 *   **插入工具列：** Transpiler 以 `CodeMatcher` 找 `rectAggregator.NewRow(17.5f)`，在前面插入 `ToolbarDrawer.Draw(this, ref rectAggregator)`；找不到時只停用工具列。
 *   **設定檔類寫入：** 先寫 `<path>.tmp`，目標存在時 `File.Replace(temp, path, null)`、否則 `File.Move`，`finally` 刪除殘留的暫存檔。讀檔失敗時從空狀態開始，不讓 Mod 載入中斷。
@@ -151,6 +157,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
 *   推送修正後立刻 `gh pr merge` 可能回報「Base branch was modified」；這是 GitHub 還在重算合併狀態，稍候重試即可，合併前確認 squash 內容含最新 commit。
 *   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach "D:\Claude Code\rtn_verify_<名稱>" <branch>`），避免工作區中下一個單元的未追蹤檔案混入，用完 `git worktree remove --force`。**不要放在 `%TEMP%`**：Windows 應用程式控制原則（Smart App Control）會擋下暫存資料夾中新建的測試 DLL（`FileLoadException 0x800711C7`），結果顯示「總計 0」，看起來像通過。
+*   **疊在別的 PR 分支上的 PR：** 基底 PR 以 `gh pr merge --delete-branch` 合併後，GitHub 會直接**關閉**依賴它的 PR，不會自動改以 main 為基底（#15 因此被關閉，改開 #16）。做法：合併基底 PR **之前**先 `gh pr edit <依賴的PR> --base main`，或等基底 PR 合併後才開下一個 PR。rebase 時用 `git rebase --onto main <舊基底 commit> <分支>`，只搬自己的 commit。
 *   多個 PR 平行審查時，切換分支會讓「已提交在別的分支」的檔案從工作區消失；回頭修前一個 PR 前，先 `git stash push --include-untracked -- <後續單元的路徑>`，修完、合併後再 `git stash pop`。
 *   給使用者的遊戲內測試步驟若要「內建字典命中」，名字先查真實字典（`Dictionary/BaseNames_zhTW.tsv`，格式 `namespace\tkey\tzh_tw`）：單元測試的假字典有 Gisele，真實字典沒有。
 *   設定頁按鈕在請求進行中會停用，連點不會送出第二次，也不會顯示請求限制的拒絕訊息；要在遊戲內看到拒絕訊息，得在上一個請求開始後的最短間隔（預設 3 秒）內，按**另一個**會送請求的按鈕，或等同一個按鈕恢復後立刻再按。
@@ -168,6 +175,8 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 
 ### 翻譯管線
 *   順序（v3 §6.1）：鎖定／空白／已含中文 → 特殊字形 → 暱稱別名 → 個人快取 → 字典 → Pending（Gemini）。每個本機命中都以實際原文經 `NameSanitizer.Sanitize`，不通過就往下一層。
+*   **學習玩家修正：** 只有模組寫入、來源為個人快取、字典或 Gemini 的譯名，被玩家改成**別的中文**才算修正。特殊字形不學（它在查快取之前就套用，學了也用不到），別名不學（只是複製別的欄位），從新生兒「建議...」選的姓也不算。
+*   判斷「欄位被換成英文名」時，只看是否出現 U+2E80 以下的字母，而且要排除 `ModifierLetter`：注音聲調 ˇ ˊ ˋ 屬於這一類，`char.IsLetter` 也會回傳 true。空字串或只有注音符號時都不能算，否則玩家全選刪除後重打中文，修正就學不到。
 *   暱稱別名：暱稱等於**目前**的名／姓，或等於**開窗時**的名／姓且該欄**已經是中文**，才算別名。玩家把名字重骰成另一個英文名時，舊暱稱就成了獨立外號，不能被新名字的譯名覆寫。名字比對一律用 `NameKey.Normalize`。
 *   別名暱稱不送 Gemini，等對應欄位的結果出來再填；對應欄位沒有中文就保持不動。送出的 `LlmRequest.NickSource` 依本次解析結果決定，不沿用開窗時的值。
 *   `ResolveRemoteAsync` 只信任 Wanted 欄位的回傳值；鎖定或已解析的欄位即使模型回了值也忽略。用戶端例外 → 失敗；非呼叫端要求的 `OperationCanceledException` → Timeout；呼叫端取消 → 往外丟。

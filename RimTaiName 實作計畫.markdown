@@ -39,6 +39,10 @@
   - 遊戲內測試用名：真實字典有 Fox（名、暱稱）、Miller，**沒有 Gisele**（只有單元測試的假字典有）
   - 與原計畫的差異：`TranslateAsync` 放在獨立的 `GeminiNameTranslator`（傳輸與翻譯語意分開）；新增 `Core/UiJob<T>` 供設定頁與 Step 4 共用
 - [ ] Step 4：命名視窗正式版（MVP 完成）
+  - [x] 視窗狀態判斷抽成純 C# 的 `Pipeline/NameDialogSession`，單元測試 26 項（PR #14）
+  - [x] 接進命名視窗：「翻譯姓名」「還原」、等待中保護、確定後學習、訊息與語言鍵（PR #16；#15 因基底分支刪除被關閉）
+  - [ ] 遊戲內驗證（下方驗證清單）
+  - 與原計畫的差異：`RequestId` 改由 `NameDialogSession` 的世代計數與 `UiJob` 處理；特殊字形與從「建議...」選的姓不學習；把譯名換成英文後再改回中文也不算修正
 - [ ] Step 5：字典 v1.0
 - [ ] Step 6：第二階段（生成中文名）
 - [ ] Step 7：上架 Steam 創意工坊
