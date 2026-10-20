@@ -300,7 +300,7 @@ namespace RimTaiName.Core
                 if (!RimTaiNameMod.Cache.SaveIfDirty())
                     ModLog.Warning("personal cache could not be saved: " + RimTaiNameMod.Cache.LastError);
                 ModLog.Message($"dev translate: {result[NameField.First].Source}/{result[NameField.Nick].Source}/{result[NameField.Last].Source}, " +
-                               $"remote {result.RemoteError} (HTTP {result.RemoteStatusCode})");
+                               $"remote {result.RemoteError} (HTTP {result.RemoteStatusCode}) {result.RemoteDetail}");
             }
         }
 

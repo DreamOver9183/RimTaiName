@@ -280,7 +280,7 @@ TestLog/    ✓ 測試機傳回的 Player.log
 *   **不傳：** `thinking_budget`、`thinking_level`、`temperature`、`top_p`、`top_k`。flash-lite 預設 `thinking_level = minimal`；取樣參數已於 2026-07-21 棄用，未來的模型收到會回 400。
 *   **讀取結果：** 從 `steps[]` 中找 `type == "model_output"` 的 step（前面可能有 `thought` step），串接其 `content[]` 中 `type == "text"` 的 `text`，再解析成 JSON。`status` 不是 `completed` 就視為失敗。
 *   **錯誤格式：** `{"error":{"code":"<snake_case 字串>","message":…}}`，`code` 是字串，不可當數字解析；舊式 API 的錯誤則是數字 code 加上 `status`。兩種都要能讀。
-*   **逾時與重試：** 逾時 15 秒；5xx 等 2 秒後重試 1 次；429 不重試，直接提示。
+*   **逾時與重試：** 逾時 60 秒；5xx 等 2 秒後重試 1 次；429 不重試，直接提示。原本是 15 秒，但免費層模型過載時會變慢而不是直接失敗（2026-10-21 實測 flash-lite 回一個字要 17 秒，所有請求都逾時），因此放寬。逾時與 5xx 的提示會說明「可能是模型太忙碌」並建議換模型，不寫成「連線逾時」，以免玩家誤以為是網路或金鑰的問題。
 *   **測試連線：** 送出一次極小的 Interactions 請求，一次驗證金鑰、模型、權限與額度。不使用 `GET models/{model}`：它的錯誤格式不同，而且回 200 也不代表能生成或還有額度。代價是每次用掉 1 次請求額度。
 *   **欄位細節：** Step 3 開工前再以官方 API reference 確認一次。
 
@@ -328,7 +328,8 @@ TestLog/    ✓ 測試機傳回的 Player.log
 | 404 | 模型代號不存在 |
 | 429 `quota_exceeded` | 今日額度已用完，附上重置時間（太平洋時間午夜換算成本機時間） |
 | 其他 429（如 `rate_limit_exceeded`） | 請求太頻繁，稍後再試 |
-| 5xx、逾時、斷線 | 稍後再試 |
+| 5xx、逾時 | 模型可能太忙碌，稍後再試或在設定換一個模型 |
+| 斷線（DNS、TLS、連線失敗） | 檢查網路 |
 
 7.  **焦點：** 實測證明保留焦點時寫入也能正確顯示；仍保留先 `UnfocusCurrentTextField()` 作為保險。
 
