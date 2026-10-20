@@ -205,7 +205,8 @@ namespace RimTaiName.UI_Patches
                 return;
             ModLog.Message($"{(mode == ProcessMode.Generate ? "generate" : "translate")}: {result[NameField.First].Source}/{result[NameField.Nick].Source}/{result[NameField.Last].Source}" +
                            (result.RemoteStatusCode != 0 || result.RemoteError != GeminiErrorKind.None
-                               ? $", remote {result.RemoteError} (HTTP {result.RemoteStatusCode})"
+                               ? $", remote {result.RemoteError} (HTTP {result.RemoteStatusCode})" +
+                                 (string.IsNullOrEmpty(result.RemoteDetail) ? string.Empty : " " + result.RemoteDetail)
                                : string.Empty));
         }
 

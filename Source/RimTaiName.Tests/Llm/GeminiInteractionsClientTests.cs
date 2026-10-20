@@ -236,6 +236,7 @@ namespace RimTaiName.Tests.Llm
             handler.Delay = TimeSpan.FromSeconds(5);
             GeminiResult result = await client.CheckAsync(Model, Ct);
             Assert.Equal(GeminiErrorKind.Timeout, result.Error);
+            Assert.Equal("no response within 0.1 s", result.Detail);
         }
 
         [Fact]

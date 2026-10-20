@@ -29,8 +29,8 @@
   <RimTaiName_Gemini_ModelNotFound>This model id does not exist.</RimTaiName_Gemini_ModelNotFound>
   <RimTaiName_Gemini_QuotaExceeded>Today's free quota is used up. It resets at {0}.</RimTaiName_Gemini_QuotaExceeded>
   <RimTaiName_Gemini_RateLimited>Too many requests. Please try again shortly.</RimTaiName_Gemini_RateLimited>
-  <RimTaiName_Gemini_ServerError>Gemini is not responding right now. Please try again later.</RimTaiName_Gemini_ServerError>
-  <RimTaiName_Gemini_Timeout>The connection timed out. Please try again later.</RimTaiName_Gemini_Timeout>
+  <RimTaiName_Gemini_ServerError>Gemini is not responding right now; the model may be overloaded. Please try again later, or use another model id in the mod settings.</RimTaiName_Gemini_ServerError>
+  <RimTaiName_Gemini_Timeout>Gemini took too long to answer; the model may be overloaded. Please try again later, or use another model id in the mod settings.</RimTaiName_Gemini_Timeout>
   <RimTaiName_Gemini_Network>Cannot reach Gemini. Please check your network.</RimTaiName_Gemini_Network>
   <RimTaiName_Gemini_UnexpectedStatus>Gemini returned an unexpected status (HTTP {0}).</RimTaiName_Gemini_UnexpectedStatus>
   <RimTaiName_Gemini_InvalidResponse>Gemini's response could not be read. Please try again later.</RimTaiName_Gemini_InvalidResponse>

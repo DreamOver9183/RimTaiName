@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -21,7 +22,11 @@ namespace RimTaiName.Llm
 
         private const int MaxDetailLength = 200;
 
-        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(15);
+        /// <summary>
+        /// Generous on purpose: an overloaded free-tier model answers slowly rather than failing (2026-10-21:
+        /// a one-word reply from flash-lite took 17 s, and 15 s timed out every request).
+        /// </summary>
+        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
         private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
 
@@ -110,7 +115,8 @@ namespace RimTaiName.Llm
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 // HttpClient reports its own timeout as a cancellation the caller did not ask for.
-                return GeminiResult.Fail(GeminiErrorKind.Timeout);
+                return GeminiResult.Fail(GeminiErrorKind.Timeout, 0,
+                    "no response within " + http.Timeout.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture) + " s");
             }
             catch (HttpRequestException e)
             {
