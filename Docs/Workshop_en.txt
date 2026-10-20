@@ -52,5 +52,11 @@ Press rename on the character card (the newborn naming window works too) and the
 [*]Switching from a manual install to the Workshop version resets the mod settings (model, interval); the API key and the personal cache are shared.
 [/list]
 
+[h2]FAQ[/h2]
+[list]
+[*][b]"Gemini took too long to answer" or "Gemini is not responding right now":[/b] Google's free models slow down or turn requests away when they are busy. This has nothing to do with your key or network, so a new key will not help. Try again later, or switch to another model id in the mod settings (for example gemini-3.5-flash) and press Default to switch back afterwards.
+[*][b]"Today's free quota is used up":[/b] wait until the reset time shown in the message. Vanilla names still translate offline from the built-in dictionary meanwhile.
+[/list]
+
 [h2]Bug reports[/h2]
 Use [url=https://github.com/DreamOver9183/RimTaiName/issues]GitHub[/url] or the comments, with your Player.log (%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios). The log never contains your key.

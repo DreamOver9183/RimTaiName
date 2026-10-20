@@ -52,5 +52,11 @@
 [*]從手動安裝版改用創意工坊版時，Mod 設定（模型、間隔等）需要重新設定；API Key 與個人快取存在遊戲設定資料夾，兩版共用。
 [/list]
 
+[h2]常見問題[/h2]
+[list]
+[*][b]顯示「Gemini 太久沒有回應」或「伺服器暫時無法回應」：[/b]Google 的免費模型忙碌時會變得很慢或暫時拒絕請求，和你的金鑰、網路無關，換新金鑰也沒有用。請稍後再試，或在 Mod 設定把模型代號換成其他模型（例如 gemini-3.5-flash），之後按「還原預設」即可改回。
+[*][b]顯示「今日免費額度已用完」：[/b]等到訊息上的重置時間即可；這段期間原版名字仍可用內建字典離線翻譯。
+[/list]
+
 [h2]回報問題[/h2]
 請到 [url=https://github.com/DreamOver9183/RimTaiName/issues]GitHub[/url] 或本頁留言，並附上 Player.log（位於 %USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios）。log 中不會有你的金鑰。

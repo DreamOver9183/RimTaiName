@@ -1,0 +1,14 @@
+每次更新後，到創意工坊頁面的「變更記錄」（Change Notes）把遊戲自動填的「[Auto-generated text]: Update on …」改成對應版本的內容（BBCode）。
+
+===== 1.0.1 =====
+[b]1.0.1[/b]
+[list]
+[*]Gemini 忙碌時不再一直顯示「連線逾時」：等待上限由 15 秒放寬為 60 秒。免費模型忙碌時常常只是回得比較慢。
+[*]逾時與伺服器錯誤的提示改為說明「可能是模型太忙碌」，並建議稍後再試或換一個模型代號；這類錯誤和金鑰、網路無關。
+[*]Player.log 會記下 Gemini 回傳的錯誤原因，方便回報問題。
+[/list]
+[list]
+[*]No more constant "connection timed out" while Gemini is busy: the wait limit is now 60 seconds instead of 15, because busy free-tier models often just answer slowly.
+[*]Timeout and server-error messages now say the model may be overloaded and suggest trying again later or switching the model id; these errors have nothing to do with your key or network.
+[*]Player.log now records the reason Gemini gave for an error, which helps with bug reports.
+[/list]

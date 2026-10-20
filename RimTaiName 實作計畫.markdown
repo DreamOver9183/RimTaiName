@@ -59,7 +59,10 @@
   - 與原計畫的差異：以 `Seed` 產生外文名開頭字母的提示，讓重複生成的結果不同（取樣參數已棄用）；未鎖定欄位的舊值不送出
 - [ ] Step 7：上架 Steam 創意工坊
   - [x] 正式 `packageId` `DreamOver9183.RimTaiName`、名稱「邊緣臺名 RimTaiName」、`HarmonyId`、`Preview.png`、創意工坊說明（`Docs/Workshop_zhTW.txt`／`_en.txt`）、README（PR #20）
-  - [ ] 使用者在測試機上傳；`About/PublishedFileId.txt` 拷回專案並 commit；Steam 頁面貼上說明、設定可見度與必要項目（Harmony）
+  - [x] 使用者在測試機上傳 1.0.0（2026-10-17，`PublishedFileId` 3820899951）；`About/PublishedFileId.txt` 已 commit
+  - [ ] Steam 頁面貼上說明、設定可見度與必要項目（Harmony）
+  - [x] 1.0.1 修正：Gemini 過載時所有請求都逾時（`TestLog/bug1`）。逾時 15 → 60 秒，逾時與 5xx 的提示改為「可能是模型太忙碌」，log 附上錯誤細節（PR #21）；說明頁加「常見問題」，變更記錄見 `Docs/Workshop_ChangeNotes.txt`
+  - [ ] 測試機實測 1.0.1 並更新創意工坊項目
   - 延後：1.7 unstable 實測（開發機與測試機都沒有 1.7），通過後才更新 `supportedVersions` 與 `LoadFolders.xml`
 
 ## Context

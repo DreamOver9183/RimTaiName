@@ -83,7 +83,7 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 | 批次翻譯名字 | `python -I Tools/agy_translate.py <in.csv> <out.csv> --workers 8`（可接續） |
 | PR 自動審查 | `python -I Tools/agy_review.py <PR#> --post` |
 | 遊戲記錄 | 開發機 `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Player.log` |
-| 上架／更新創意工坊 | 打包後把 `dist/RimTaiName.zip` 解到測試機的 `Mods\RimTaiName`（一般資料夾）→ 開發模式 → Mod 清單選本 Mod → 「上傳到 Steam 創意工坊」。上傳後把 `About/PublishedFileId.txt` 拷回專案並 commit。頁面說明貼 `Docs/Workshop_*.txt`（BBCode） |
+| 上架／更新創意工坊 | 打包後把 `dist/RimTaiName.zip` 解到測試機的 `Mods\RimTaiName`（一般資料夾）→ 開發模式 → Mod 清單選本 Mod → 「上傳到 Steam 創意工坊」。上傳後把 `About/PublishedFileId.txt` 拷回專案並 commit。頁面說明貼 `Docs/Workshop_*.txt`（BBCode）。更新版：先加 `modVersion`，上傳後在 Steam 頁面把變更記錄改成 `Docs/Workshop_ChangeNotes.txt` 的內容 |
 
 ---
 
@@ -153,7 +153,9 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
     *   `SetItemContent(RootDir)` 會上傳**整個 Mod 資料夾**，沒有任何排除。開發機的 `Mods\RimTaiName` 是指向整個專案的 junction，裡面有金鑰檔、`TestLog/`、原始碼，**絕不可從那裡上傳**，一律用 `dist/RimTaiName` 的乾淨副本。
     *   標題每次上傳都從 `About.xml` 更新，說明只在第一次上傳時寫入；之後改說明要直接在 Steam 頁面編輯。
     *   上傳選單只在開發模式下出現。
-    *   遊戲把 ID 寫進 `About/PublishedFileId.txt`，更新同一個項目要靠它，所以要放進版本控制。
+    *   上傳確認視窗（`Dialog_ConfirmModUpload`）的「標記為翻譯」（`TagAsTranslation`）**不要勾**：`ModMetaData.GetWorkshopTags()` 勾選時回傳 `Translation`、否則回傳 `Mod`。`SetItemTags` 每次上傳都會整組覆寫標籤，所以勾了之後，項目會從「Mod」分類消失。這個分類是給語言包用的。
+    *   遊戲把 ID 寫進 `About/PublishedFileId.txt`，更新同一個項目要靠它，所以要放進版本控制。打包會複製整個 `About`，這個檔案因此隨 zip 帶到測試機；少了它，上傳按鈕會變回「上傳」並建立**新的**項目。
+    *   更新時遊戲自動把變更記錄填成「[Auto-generated text]: Update on <日期>.」，要到 Steam 頁面的「變更記錄」改成 `Docs/Workshop_ChangeNotes.txt` 的內容。每次更新都要把 `About.xml` 的 `modVersion` 加一。
 *   改了 `packageId` 之後，`ModsConfig.xml` 裡的舊 ID 對不上，Mod 會被停用，要在 Mod 清單重新啟用。Mod 設定檔名取決於資料夾名稱，不受 `packageId` 影響。
 *   開發模式**且**開啟上帝模式時（`DebugSettings.ShowDevGizmos` = `Prefs.DevMode && godMode`），任何小人的改名視窗都是新生兒版（三列可編輯、無頭銜、姓欄為「建議...」）；只開開發模式不會。
 *   姓欄「建議」清單為空時，`MakeRow` 不畫任何按鈕；鎖頭必須 `NewCol(24f, HorizontalJustification.Right)`。
@@ -170,13 +172,18 @@ PowerShell 5.1 沒有 `&&`；以下指令在專案根目錄執行。
 *   錯誤 `code` 是 snake_case **字串**；`models.get` 等舊 API 是數字 code ＋ `status`。429 分 `quota_exceeded`（每日，不分大小寫比對）與 `rate_limit_exceeded`（每分鐘）。舊 API 的 `RESOURCE_EXHAUSTED` 兩種限制都會用，**不能**當成每日額度；只有訊息含 `PerDay`／`per day` 時才算。
 *   2026-10-16 即時測試確認：`AQ.` 金鑰可用 `x-goog-api-key` 呼叫 Interactions；`response_format` 的 schema 會被遵守；錯誤金鑰回 401、未知模型回 404。
 *   `temperature`／`top_p`／`top_k` 已棄用，未來模型會回 400；flash-lite 預設 `thinking_level = minimal`。
+*   **模型過載（2026-10-21，`TestLog/bug1`）：** 免費層模型忙碌時多半是**變慢**而不是報錯。flash-lite 回一個字要 17.4 秒或 3.7 秒，偶爾 1 秒內回 503。Interactions 的 503 是 `service_unavailable`，訊息為「currently experiencing high demand」；舊 API 是 503 `UNAVAILABLE`。原本的 15 秒逾時因此讓所有請求都失敗，現在改為 60 秒。玩家回報「全部逾時、換金鑰也一樣」時依序檢查：
+    1.  不帶金鑰的 `curl.exe -4 -X POST -d "{}" https://generativelanguage.googleapis.com/v1beta/interactions`，網路正常時會很快回 403。
+    2.  跑即時測試，或用不設上限的腳本量實際延遲（金鑰只在程式內讀取）。
+    3.  換 `gemini-3.5-flash` 比較。
 
 ### 測試與審查流程
 *   .NET 10 SDK 的 `dotnet test` 不再支援 VSTest：xunit.v3 必須搭配根目錄 `global.json` 的 `"test": {"runner": "Microsoft.Testing.Platform"}`，指令改為 `dotnet test --project <dir>`；測試專案不需要 `Microsoft.NET.Test.Sdk`、`xunit.runner.visualstudio`。
 *   xUnit 分析器 xUnit1051（測試專案設 `TreatWarningsAsErrors`）：呼叫接受 `CancellationToken` 的方法時要傳 `TestContext.Current.CancellationToken`。
 *   即時測試用 `Assert.SkipWhen`／`Assert.SkipUnless`（xunit.v3）在沒有金鑰時略過，並以 `[Trait("Category", "Live")]` 標記。
 *   即時測試檢查金鑰是否外洩時，**不要**用 `Assert.Contains`／`DoesNotContain(key, …)`：失敗訊息會把真實金鑰印進測試輸出。改用 `Assert.True(!text.Contains(key), "key leaked …")`。
-*   本帳號 Copilot 審查額度已用完：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
+*   本帳號 Copilot 審查額度已用完（2026-10-21 仍是如此）：`gh pr edit --add-reviewer "@copilot"` 會立刻留下「reached their quota limit」的 review，此時直接走 `Tools/agy_review.py`（約 10～15 分鐘，建議背景執行）。
+*   auto mode 會擋下 `gh pr merge`（2026-10-21，PR #21）：合併前先請使用者核准，或請使用者在 GitHub 上合併。
 *   PowerShell 中 `gh ... --jq '<含空白與引號的運算式>'` 會被拆成多個參數；複雜查詢改用 Python 呼叫 `gh api` 再解析 JSON。
 *   推送修正後立刻 `gh pr merge` 可能回報「Base branch was modified」；這是 GitHub 還在重算合併狀態，稍候重試即可，合併前確認 squash 內容含最新 commit。
 *   驗證某個分支能單獨建置時，用暫存 worktree（`git worktree add --detach "D:\Claude Code\rtn_verify_<名稱>" <branch>`），避免工作區中下一個單元的未追蹤檔案混入，用完 `git worktree remove --force`。**不要放在 `%TEMP%`**：Windows 應用程式控制原則（Smart App Control）會擋下暫存資料夾中新建的測試 DLL（`FileLoadException 0x800711C7`），結果顯示「總計 0」，看起來像通過。
